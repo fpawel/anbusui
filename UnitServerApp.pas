@@ -4,7 +4,7 @@ interface
 
 uses
     Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes,
-    serverapp_msg;
+    serverapp_msg, superobject;
 
 type
     TServerApp = class(TDataModule)
@@ -13,16 +13,23 @@ type
         { Private declarations }
         hWndServer: HWND;
         procedure init_hWndServer;
-        procedure MustSendMessage(Msg: UINT; wParam: WPARAM; lParam: LPARAM);
+        procedure MustSendMessage(Msg: UINT; wParam: wParam; lParam: lParam);
     public
         { Public declarations }
-        function SendMsg(Msg: TServerAppUserMsg; wParam: wParam; lParam: lParam): LRESULT;
-        procedure MustSendUserMsg(Msg: TServerAppUserMsg; wParam: wParam; lParam: lParam);
+        function SendMsg(Msg: TServerAppUserMsg; wParam: wParam;
+          lParam: lParam): LRESULT;
+        procedure MustSendUserMsg(Msg: TServerAppUserMsg; wParam: wParam;
+          lParam: lParam);
 
-        procedure MustSendStr(sourceHWND:HWND; msg :TServerAppDataMsg; data:string);
-        procedure MustSendJSON(sourceHWND:HWND; msg:TServerAppDataMsg; data:TObject);
+        procedure MustSendStr(sourceHWND: HWND; Msg: TServerAppDataMsg;
+          data: string);
+        procedure MustSendJSON(sourceHWND: HWND; Msg: TServerAppDataMsg;
+          data: TObject);
 
         procedure CloseServer;
+
+        
+
     end;
 
 var
@@ -30,7 +37,7 @@ var
 
 implementation
 
-uses rest.json;
+uses rest.json, ujsonrpc;
 
 { %CLASSGROUP 'Vcl.Controls.TControl' }
 
@@ -47,7 +54,8 @@ begin
     SendMessage(hWndServer, WM_CLOSE, 0, 0);
 end;
 
-procedure TServerApp.MustSendMessage(Msg: UINT; wParam: WPARAM; lParam: LPARAM);
+
+procedure TServerApp.MustSendMessage(Msg: UINT; wParam: wParam; lParam: lParam);
 begin
     if SendMessage(hWndServer, Msg, wParam, lParam) = 0 then
     begin
@@ -57,12 +65,14 @@ begin
     end;
 end;
 
-procedure TServerApp.MustSendUserMsg(Msg: TServerAppUserMsg; wParam: wParam; lParam: lParam);
+procedure TServerApp.MustSendUserMsg(Msg: TServerAppUserMsg; wParam: wParam;
+  lParam: lParam);
 begin
     MustSendMessage(WM_USER + integer(Msg), wParam, lParam);
 end;
 
-function TServerApp.SendMsg(Msg: TServerAppUserMsg; wParam: wParam; lParam: lParam): LRESULT;
+function TServerApp.SendMsg(Msg: TServerAppUserMsg; wParam: wParam;
+  lParam: lParam): LRESULT;
 begin
     result := SendMessage(hWndServer, WM_USER + integer(Msg), wParam, lParam);
 end;
@@ -75,7 +85,8 @@ begin
 
 end;
 
-procedure TServerApp.MustSendStr(sourceHWND:HWND; msg:TServerAppDataMsg; data:string);
+procedure TServerApp.MustSendStr(sourceHWND: HWND; Msg: TServerAppDataMsg;
+  data: string);
 var
     cd: COPYDATASTRUCT;
     ptr_bytes: TBytes;
@@ -83,13 +94,14 @@ begin
     ptr_bytes := WideBytesOf(data);
     cd.cbData := Length(ptr_bytes);
     cd.lpData := ptr_bytes;
-    cd.dwData := integer(msg);
+    cd.dwData := integer(Msg);
     MustSendMessage(WM_COPYDATA, sourceHWND, integer(@cd));
 end;
 
-procedure TServerApp.MustSendJSON(sourceHWND:HWND; msg:TServerAppDataMsg; data:TObject);
+procedure TServerApp.MustSendJSON(sourceHWND: HWND; Msg: TServerAppDataMsg;
+  data: TObject);
 begin
-    MustSendStr(sourceHWND, msg, TJson.ObjectToJsonString(data));
+    MustSendStr(sourceHWND, Msg, TJson.ObjectToJsonString(data));
 end;
 
 end.

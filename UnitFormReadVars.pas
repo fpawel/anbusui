@@ -35,7 +35,7 @@ type
         FVarIndex: Integer;
         FErrors: TDictionary<string, string>;
         FNetwork: TNetwork;
-        FInitialized:boolean;
+        FInitialized: Boolean;
 
         procedure SetRowChecked(row: Integer; v: Boolean);
         procedure ToggleRowChecked(row: Integer);
@@ -62,7 +62,7 @@ implementation
 {$R *.dfm}
 
 uses stringgridutils, stringutils, UnitFormPopup, UnitServerApp, serverapp_msg,
-    UnitFormChartSeries;
+    UnitFormChartSeries, ujsonrpc, superobject, pipe;
 
 function TStringGridEx.GetInplaceEditor: TInplaceEdit;
 begin
@@ -124,6 +124,7 @@ var
     k: string;
     ACol, ARow: Integer;
 
+    requestObj: TJsonRpcMessage;
 begin
 
     with StringGrid1 do
@@ -134,7 +135,8 @@ begin
 
         if (ACol = 0) AND (ARow = 0) then
         begin
-            ServerApp.SendMsg(msgToggle, 0, 0);
+            GetPipeJsonRpcResponse('\\.\pipe\anbus', '1',
+              'SetsSvc.Toggle', nil);
             exit;
         end;
 
@@ -356,17 +358,20 @@ begin
             if ARow = 0 then
             begin
                 if TryStrToInt(Value, n) and (n > 0) and (n < 256) then
-                    ServerApp.MustSendUserMsg(msgSetAddr, col2place(ACol), n)
+                    GetPipeJsonRpcResponse('\\.\pipe\anbus', '1',
+                      'SetsSvc.SetAddr',
+                      SO(Format('{"place": %d, "addr":%d}',
+                      [col2place(ACol), n])))
                 else
                     ServerApp.MustSendUserMsg(msgPeer, 0, 0);
             end;
 
             if ACol = 0 then
             begin
-                if TryStrToInt(Value, n) and (n > -1) then
-                    ServerApp.MustSendUserMsg(msgSetvar, row2var(ARow), n)
-                else
-                    ServerApp.MustSendUserMsg(msgPeer, 0, 0);
+//                if TryStrToInt(Value, n) and (n > -1) then
+//                    ServerApp.MustSendUserMsg(msgSetvar, row2var(ARow), n)
+//                else
+//                    ServerApp.MustSendUserMsg(msgPeer, 0, 0);
             end;
         end
         else
@@ -413,7 +418,7 @@ begin
         end;
     end;
     StringGrid_Redraw(StringGrid1);
-    FInitialized := true;
+    FInitialized := True;
 end;
 
 procedure TFormReadVars.reset;
@@ -437,7 +442,7 @@ end;
 procedure TFormReadVars.HandleReadVar(X: TReadVar);
 var
     prev_place, prev_var: Integer;
-    prev_place_err : boolean;
+    prev_place_err: Boolean;
 begin
     if not FInitialized then
         exit;
@@ -473,16 +478,16 @@ begin
         FErrors.AddOrSetValue(plk(FPlace), X.FError)
     else
         FErrors.Remove(plk(FPlace));
-    if prev_place_err <>  FErrors.ContainsKey(plk(FPlace)) then
+    if prev_place_err <> FErrors.ContainsKey(plk(FPlace)) then
         StringGrid_RedrawCell(StringGrid1, place2col(FPlace), 0);
 
 end;
 
 procedure TFormReadVars.SetRowChecked(row: Integer; v: Boolean);
 begin
-    FNetwork.FVars[row2var(row)].FUnchecked := v;
-    ServerApp.SendMsg(msgSetVarChecked, row2var(row), lParam(v));
-    StringGrid_RedrawRow(StringGrid1, row);
+//    FNetwork.FVars[row2var(row)].FUnchecked := v;
+//    ServerApp.SendMsg(msgSetVarChecked, row2var(row), lParam(v));
+//    StringGrid_RedrawRow(StringGrid1, row);
 end;
 
 procedure TFormReadVars.ToggleRowChecked(row: Integer);
@@ -492,11 +497,11 @@ end;
 
 procedure TFormReadVars.ToggleColChecked(col: Integer);
 begin
-    FNetwork.FPlaces[col2place(col)].FUnchecked := not FNetwork.FPlaces
-      [col2place(col)].FUnchecked;
-    ServerApp.SendMsg(msgSetPlaceChecked, col2place(col),
-      lParam(FNetwork.FPlaces[col2place(col)].FUnchecked));
-    StringGrid_RedrawCol(StringGrid1, col);
+//    FNetwork.FPlaces[col2place(col)].FUnchecked := not FNetwork.FPlaces
+//      [col2place(col)].FUnchecked;
+//    ServerApp.SendMsg(msgSetPlaceChecked, col2place(col),
+//      lParam(FNetwork.FPlaces[col2place(col)].FUnchecked));
+//    StringGrid_RedrawCol(StringGrid1, col);
 end;
 
 function TFormReadVars.FormatAddrPlace(place, varindex: Integer): string;
@@ -509,11 +514,11 @@ begin
     if (cl > -1) AND (cl < StringGrid1.ColCount) then
         s1 := StringGrid1.Cells[place2col(place), 0]
     else
-        s1 := format('¹%d', [place + 1]);
+        s1 := Format('¹%d', [place + 1]);
     if (ro > -1) AND (ro < StringGrid1.RowCount) then
         s2 := StringGrid1.Cells[0, var2row(varindex)]
     else
-        s2 := format('¹%d', [varindex + 1]);
+        s2 := Format('¹%d', [varindex + 1]);
     Result := s1 + ': ' + s2;
 end;
 
@@ -523,8 +528,8 @@ var
 begin
     cl := place2col(place);
     if (cl > 0) AND (cl < StringGrid1.ColCount) then
-        if TryStrToInt(StringGrid1.Cells[cl, 0], result) then
-            exit(result);
+        if TryStrToInt(StringGrid1.Cells[cl, 0], Result) then
+            exit(Result);
     exit(-1);
 end;
 
@@ -534,8 +539,8 @@ var
 begin
     ro := var2row(varindex);
     if (ro > 0) AND (ro < StringGrid1.RowCount) then
-        if TryStrToInt(StringGrid1.Cells[0, ro], result) then
-            exit(result);
+        if TryStrToInt(StringGrid1.Cells[0, ro], Result) then
+            exit(Result);
     exit(-1);
 
 end;

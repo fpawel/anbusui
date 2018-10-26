@@ -3,8 +3,7 @@ unit serverapp_msg;
 interface
 
 type
-    TServerAppUserMsg = (msgPeer, msgSetVarChecked, msgSetPlaceChecked,
-      msgAddDelVar, msgAddDelPlace, msgSetAddr, msgSetVar, msgToggle);
+    TServerAppUserMsg = (msgPeer);
 
     TServerAppDataMsg = (dmsgSetsProp, dmsgPerformTextCommand);
 
