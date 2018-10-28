@@ -27,6 +27,8 @@ type
           Shift: TShiftState; X, Y: Integer);
         procedure StringGrid1SetEditText(Sender: TObject; ACol, ARow: Integer;
           const Value: string);
+    procedure StringGrid1MouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
     private
         { Private declarations }
         Last_Edited_Col, Last_Edited_Row: Integer;
@@ -49,9 +51,11 @@ type
 
         function FormatAddrPlace(place, varindex: Integer): string;
 
-        procedure Init(ANetwork: TNetwork);
+        procedure SetNetwork(ANetwork: TNetwork);
         procedure HandleReadVar(X: TReadVar);
         procedure reset;
+
+        procedure UpdateNetwork(const method: string);
     end;
 
 var
@@ -61,7 +65,8 @@ implementation
 
 {$R *.dfm}
 
-uses stringgridutils, stringutils, UnitFormPopup, UnitServerApp, serverapp_msg,
+uses stringgridutils, rest.json, stringutils, UnitFormPopup, UnitServerApp,
+    serverapp_msg,
     UnitFormChartSeries, ujsonrpc, superobject, pipe;
 
 function TStringGridEx.GetInplaceEditor: TInplaceEdit;
@@ -125,6 +130,10 @@ var
     ACol, ARow: Integer;
 
     requestObj: TJsonRpcMessage;
+
+    response: IJsonRpcParsed;
+    network: TNetwork;
+    str_response: string;
 begin
 
     with StringGrid1 do
@@ -135,8 +144,7 @@ begin
 
         if (ACol = 0) AND (ARow = 0) then
         begin
-            GetPipeJsonRpcResponse('\\.\pipe\anbus', '1',
-              'SetsSvc.Toggle', nil);
+            UpdateNetwork('SetsSvc.Toggle');
             exit;
         end;
 
@@ -191,7 +199,7 @@ begin
     if place > -1 then
         Checked_col := not FNetwork.FPlaces[place].FUnchecked;
 
-    if gdFixed in State then
+    if (ACol = 0) or (ARow = 0) then
         cnv.Brush.Color := cl3DLight
     else if gdSelected in State then
         cnv.Brush.Color := clGradientInactiveCaption
@@ -208,7 +216,7 @@ begin
 
     if (place >= 0) and (var_ind >= 0) and (place = FPlace) and
       (var_ind = FVarIndex) then
-        cnv.Brush.Color := clInfoBk;
+        cnv.Brush.Color := clMoneyGreen;
 
     if cnv.TextWidth(s) + 3 > Rect.Width then
         s := cut_str(s, cnv, Rect.Width);
@@ -278,10 +286,10 @@ begin
     if X > (Rect.Right + Rect.Left) div 2 then
         with StringGrid1 do
         begin
-            fixedrows := 0;
-            if True then
+            if EditorMode then
+                EditorMode := false;
 
-                col := ACol;
+            col := ACol;
             row := ARow;
             Options := Options + [goEditing];
             EditorMode := True;
@@ -305,6 +313,20 @@ begin
     end;
 end;
 
+procedure TFormReadVars.StringGrid1MouseMove(Sender: TObject;
+  Shift: TShiftState; X, Y: Integer);
+begin
+     with Sender as TStringGrid do
+    begin
+        if not EditorMode then
+        begin
+            FixedRows := 1;
+        end;
+
+    end;
+
+end;
+
 procedure TFormReadVars.StringGrid1SelectCell(Sender: TObject;
   ACol, ARow: Integer; var CanSelect: Boolean);
 var
@@ -320,6 +342,8 @@ begin
 
     with Sender as TStringGrid do
     begin
+        if ARow = 0 then
+            FixedRows := 0;
         // When selecting a cell
         if EditorMode then
         begin // It was a cell being edited
@@ -327,12 +351,18 @@ begin
             // Do an extra check if the LastEdited_ACol and LastEdited_ARow are not -1 already.
             // This is to be able to use also the arrow-keys up and down in the Grid.
             if (Last_Edited_Col <> -1) and (Last_Edited_Row <> -1) then
+            begin
                 StringGrid1SetEditText(grd, Last_Edited_Col, Last_Edited_Row,
                   Cells[Last_Edited_Col, Last_Edited_Row]);
+
+            end;
             // Just make the call
         end;
         // Do whatever else wanted
         Options := Options - [goEditing];
+
+//        if (ARow <> 0)  then
+//            FixedRows := 1;
 
     end;
 
@@ -347,6 +377,7 @@ var
 begin
 
     With StringGrid1 do
+    begin
         // Fired on every change
         if Not EditorMode // goEditing must be 'True' in Options
         then
@@ -354,24 +385,24 @@ begin
             Last_Edited_Col := -1; // Indicate no cell is edited
             Last_Edited_Row := -1; // Indicate no cell is edited
             // Do whatever wanted after user has finish editing a cell
-            fixedrows := 1;
             if ARow = 0 then
             begin
+
                 if TryStrToInt(Value, n) and (n > 0) and (n < 256) then
-                    GetPipeJsonRpcResponse('\\.\pipe\anbus', '1',
-                      'SetsSvc.SetAddr',
+                    ServerApp.GetResponse('0', 'SetsSvc.SetAddr',
                       SO(Format('{"place": %d, "addr":%d}',
                       [col2place(ACol), n])))
                 else
-                    ServerApp.MustSendUserMsg(msgPeer, 0, 0);
+                    UpdateNetwork('SetsSvc.Network');
             end;
 
             if ACol = 0 then
             begin
-//                if TryStrToInt(Value, n) and (n > -1) then
-//                    ServerApp.MustSendUserMsg(msgSetvar, row2var(ARow), n)
-//                else
-//                    ServerApp.MustSendUserMsg(msgPeer, 0, 0);
+                if TryStrToInt(Value, n) and (n > -1) then
+                    ServerApp.GetResponse('0', 'SetsSvc.SetVar',
+                      SO(Format('{"index":%d,"var":%d}', [row2var(ARow), n])))
+                else
+                    UpdateNetwork('SetsSvc.Network');
             end;
         end
         else
@@ -379,10 +410,11 @@ begin
             Last_Edited_Col := ACol; // Remember column of cell being edited
             Last_Edited_Row := ARow; // Remember row of cell being edited
         end;
+    end;
 
 end;
 
-procedure TFormReadVars.Init(ANetwork: TNetwork);
+procedure TFormReadVars.SetNetwork(ANetwork: TNetwork);
 var
     ACol, ARow, place, varInd: Integer;
 begin
@@ -400,8 +432,10 @@ begin
     StringGrid_Clear(StringGrid1);
     with StringGrid1 do
     begin
+        EditorMode := false;
+        Options := Options - [goEditing];
         RowCount := Length(FNetwork.FVars) + 1;
-        fixedrows := 1;
+        //FixedRows := 1;
         ColCount := Length(FNetwork.FPlaces) + 1;
         Cells[0, 0] := '№';
         Cells[1, 0] := 'Параметр';
@@ -485,9 +519,10 @@ end;
 
 procedure TFormReadVars.SetRowChecked(row: Integer; v: Boolean);
 begin
-//    FNetwork.FVars[row2var(row)].FUnchecked := v;
-//    ServerApp.SendMsg(msgSetVarChecked, row2var(row), lParam(v));
-//    StringGrid_RedrawRow(StringGrid1, row);
+    FNetwork.FVars[row2var(row)].FUnchecked := v;
+    StringGrid_RedrawRow(StringGrid1, row);
+    ServerApp.GetResponse('0', 'SetsSvc.ToggleVar',
+      SO(Format('[%d]', [row2var(row)])));
 end;
 
 procedure TFormReadVars.ToggleRowChecked(row: Integer);
@@ -497,11 +532,11 @@ end;
 
 procedure TFormReadVars.ToggleColChecked(col: Integer);
 begin
-//    FNetwork.FPlaces[col2place(col)].FUnchecked := not FNetwork.FPlaces
-//      [col2place(col)].FUnchecked;
-//    ServerApp.SendMsg(msgSetPlaceChecked, col2place(col),
-//      lParam(FNetwork.FPlaces[col2place(col)].FUnchecked));
-//    StringGrid_RedrawCol(StringGrid1, col);
+    FNetwork.FPlaces[col2place(col)].FUnchecked := not FNetwork.FPlaces
+      [col2place(col)].FUnchecked;
+    StringGrid_RedrawCol(StringGrid1, col);
+    ServerApp.GetResponse('0', 'SetsSvc.TogglePlace',
+      SO(Format('[%d]', [col2place(col)])));
 end;
 
 function TFormReadVars.FormatAddrPlace(place, varindex: Integer): string;
@@ -543,6 +578,11 @@ begin
             exit(Result);
     exit(-1);
 
+end;
+
+procedure TFormReadVars.UpdateNetwork(const method: string);
+begin
+    SetNetwork(ServerApp.GetResponseNetwork('0', method, SO('{}')));
 end;
 
 end.

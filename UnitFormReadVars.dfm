@@ -30,6 +30,7 @@ object FormReadVars: TFormReadVars
     OnDrawCell = StringGrid1DrawCell
     OnKeyPress = StringGrid1KeyPress
     OnMouseDown = StringGrid1MouseDown
+    OnMouseMove = StringGrid1MouseMove
     OnSelectCell = StringGrid1SelectCell
     OnSetEditText = StringGrid1SetEditText
     ColWidths = (

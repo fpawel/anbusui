@@ -110,12 +110,7 @@
         <DCCReference Include="models\model_config.pas"/>
         <DCCReference Include="utils\stringgridutils.pas"/>
         <DCCReference Include="utils\stringutils.pas"/>
-        <DCCReference Include="settings\PropertyValueEditors.pas"/>
         <DCCReference Include="utils\listports.pas"/>
-        <DCCReference Include="settings\PropertiesFormUnit.pas">
-            <Form>PropertiesForm</Form>
-            <FormType>dfm</FormType>
-        </DCCReference>
         <DCCReference Include="models\model_network.pas"/>
         <DCCReference Include="UnitFormReadVars.pas">
             <Form>FormReadVars</Form>
@@ -137,6 +132,18 @@
             <Form>FormChartSeries</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="utils\jsonrpc\ujsonrpc.pas"/>
+        <DCCReference Include="utils\superobject\superdate.pas"/>
+        <DCCReference Include="utils\superobject\superobject.pas"/>
+        <DCCReference Include="utils\superobject\supertimezone.pas"/>
+        <DCCReference Include="utils\superobject\supertypes.pas"/>
+        <DCCReference Include="utils\superobject\superxmlparser.pas"/>
+        <DCCReference Include="utils\pipe.pas"/>
+        <DCCReference Include="PropertiesFormUnit.pas">
+            <Form>PropertiesForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="PropertyValueEditors.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

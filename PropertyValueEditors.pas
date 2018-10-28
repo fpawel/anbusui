@@ -12,8 +12,6 @@ uses
 
 type
 
-    THandlePropertyValueChanged = reference to procedure
-      (p: TChangedPropertyValue);
 
     // ----------------------------------------------------------------------------------------------------------------------
     // Our own edit link to implement several different node editors.
@@ -24,7 +22,6 @@ type
         FNode: PVirtualNode; // The node being edited.
         FColumn: integer; // The column of the node being edited.
         FConfigData: PConfigData;
-        FHandlePropertyValueChanged: THandlePropertyValueChanged;
         procedure DoPropertyValueChanged;
     protected
         procedure EditKeyDown(Sender: TObject; var Key: Word;
@@ -41,8 +38,7 @@ type
           Column: TColumnIndex): boolean; stdcall;
         procedure ProcessMessage(var Message: TMessage); stdcall;
         procedure SetBounds(R: TRect); stdcall;
-        property OnValueChanged: THandlePropertyValueChanged
-          write FHandlePropertyValueChanged;
+        
     end;
 
     // ----------------------------------------------------------------------------------------------------------------------
@@ -60,7 +56,7 @@ type
 implementation
 
 uses
-    listports, vclutils;
+    listports, vclutils, UnitServerApp;
 
 // ----------------- TPropertyEditLink ----------------------------------------------------------------------------------
 
@@ -172,7 +168,6 @@ begin
             S := '1'
         else
             S := '0';
-
     end
     else
     begin
@@ -340,10 +335,10 @@ procedure TPropertyEditLink.DoPropertyValueChanged;
 var
     pc: TChangedPropertyValue;
 begin
-    if (not FConfigData.Prop.HasError) AND Assigned(FHandlePropertyValueChanged) then
+    if (not FConfigData.Prop.HasError) then
     begin
         pc := TChangedPropertyValue.Create(FConfigData);
-        FHandlePropertyValueChanged(pc);
+        FConfigData.Prop.FError := ServerApp.SetConfigProperyValue(pc);
         pc.Free;
     end;
 

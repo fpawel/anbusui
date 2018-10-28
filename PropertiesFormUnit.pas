@@ -58,7 +58,6 @@ type
 
     private
         FConfig: TConfig;
-        FHandlePropertyValueChanged: THandlePropertyValueChanged;
         procedure WMStartEditing(var Message: TMessage);
           message WM_STARTEDITING;
 
@@ -67,9 +66,7 @@ type
     public
 
         procedure SetConfig(AConfig: TConfig);
-        property OnValueChanged: THandlePropertyValueChanged
-          write FHandlePropertyValueChanged;
-
+        
         property Prop[node:PVirtualNode] : TConfigProperty read  GetProp;
         property TreeData[node:PVirtualNode] : PConfigData read  GetNodeData;
     end;
@@ -294,7 +291,6 @@ var
     x: TPropertyEditLink;
 begin
     x := TPropertyEditLink.Create;
-    x.OnValueChanged := FHandlePropertyValueChanged;
     EditLink := x;
 end;
 

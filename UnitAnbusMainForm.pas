@@ -14,8 +14,7 @@ const
     UM_VALIDATEINPUT = WM_USER + 100;
 
 type
-    THostAppCommand = (cmdUserConfig, cmdNetwork, cmdStatusText, cmdConsoleText,
-      cmdReadVar);
+    THostAppCommand = (cmdStatusText, cmdConsoleText, cmdReadVar);
 
     TPlace = class
         FAddr: integer;
@@ -109,7 +108,7 @@ implementation
 uses serverapp_msg, rest.json, runhostapp, json, vclutils,
     model_config, PropertiesFormUnit,
     UnitFormReadVars, stringutils, model_network, ComponentBaloonHintU,
-    richeditutils, UnitFormChartSeries, Unit1;
+    richeditutils, UnitFormChartSeries, Unit1, superobject, ujsonrpc;
 
 function CommandsFileName: string;
 begin
@@ -117,20 +116,20 @@ begin
 end;
 
 procedure TAnbusMainForm.FormCreate(Sender: TObject);
-//var n:integer;
+// var n:integer;
 begin
     ToolButtonConsoleHideClick(nil);
     // SendMessage(hWndServer, WM_CLOSE, 0, 0);
     if FileExists(CommandsFileName) then
         ComboBox1.Items.LoadFromFile(CommandsFileName);
 
-//    for n := 0 to DataModule1.IdHTTPServer1.Bindings.Count - 1 do
-//    begin
-//        with DataModule1.IdHTTPServer1.Bindings[n] do
-//        begin
-//            Richedit1.Lines.Add(ip + ':' + IntToStr(Port));
-//        end;
-//    end;
+    // for n := 0 to DataModule1.IdHTTPServer1.Bindings.Count - 1 do
+    // begin
+    // with DataModule1.IdHTTPServer1.Bindings[n] do
+    // begin
+    // Richedit1.Lines.Add(ip + ':' + IntToStr(Port));
+    // end;
+    // end;
 
 end;
 
@@ -193,19 +192,6 @@ begin
     Message.result := 1;
 
     case cmd of
-
-        cmdUserConfig:
-            begin
-                response := TJson.JsonToObject<TConfig>(StrFromCopydata(cd));
-                PropertiesForm.SetConfig(TConfig(response));
-            end;
-
-        cmdNetwork:
-            begin
-                response := TJson.JsonToObject<TNetwork>(StrFromCopydata(cd));
-                FormReadVars.Init(TNetwork(response));
-            end;
-
         cmdReadVar:
             begin
                 read_var := TJson.JsonToObject<TReadVar>(StrFromCopydata(cd));
@@ -258,10 +244,6 @@ begin
         Align := alClient;
         Parent := TabSheetSettings;
 
-        OnValueChanged := procedure(p: TChangedPropertyValue)
-            begin
-                ServerApp.MustSendJSON(Self.Handle, dmsgSetsProp, p);
-            end;
         Show;
     end;
 
@@ -284,7 +266,13 @@ begin
         NewChart;
     end;
 
-    ServerApp.MustSendUserMsg(msgPeer, 0, 0);
+    FormReadVars.UpdateNetwork('SetsSvc.Network');
+
+    PropertiesForm.SetConfig(TJson.JsonToObject<TConfig>
+      (ServerApp.GetResponse('0', 'SetsSvc.UserConfig', SO('{}'))
+      .GetMessagePayload.AsJsonObject['result'].AsString));
+
+    // ServerApp.MustSendUserMsg(msgPeer, 0, 0);
 end;
 
 procedure TAnbusMainForm.PageControlMainChange(Sender: TObject);
@@ -321,12 +309,12 @@ end;
 
 procedure TAnbusMainForm.ToolButton3Click(Sender: TObject);
 begin
-    ServerApp.MustSendUserMsg(msgAddDelPlace, 0, 0);
+    FormReadVars.UpdateNetwork('SetsSvc.AddPlace');
 end;
 
 procedure TAnbusMainForm.ToolButton4Click(Sender: TObject);
 begin
-    ServerApp.MustSendUserMsg(msgAddDelPlace, 1, 0);
+    FormReadVars.UpdateNetwork('SetsSvc.DelPlace');
 end;
 
 procedure TAnbusMainForm.ToolButton4MouseMove(Sender: TObject;
@@ -342,12 +330,12 @@ end;
 
 procedure TAnbusMainForm.ToolButton5Click(Sender: TObject);
 begin
-    ServerApp.MustSendUserMsg(msgAddDelVar, 0, 0);
+    FormReadVars.UpdateNetwork('SetsSvc.AddVar');
 end;
 
 procedure TAnbusMainForm.ToolButton6Click(Sender: TObject);
 begin
-    ServerApp.MustSendUserMsg(msgAddDelVar, 1, 0);
+    FormReadVars.UpdateNetwork('SetsSvc.DelVar');
 end;
 
 procedure TAnbusMainForm.ToolButton6MouseMove(Sender: TObject;

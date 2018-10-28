@@ -5,7 +5,7 @@ interface
 type
     TServerAppUserMsg = (msgPeer);
 
-    TServerAppDataMsg = (dmsgSetsProp, dmsgPerformTextCommand);
+    TServerAppDataMsg = ( dmsgPerformTextCommand);
 
 implementation
 

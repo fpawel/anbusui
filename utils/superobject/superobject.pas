@@ -116,6 +116,8 @@
 
 unit superobject;
 
+{$define HAVE_RTTI}
+
 interface
 uses
   Classes, supertypes
