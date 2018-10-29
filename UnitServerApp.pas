@@ -16,11 +16,7 @@ type
         procedure MustSendMessage(Msg: UINT; wParam: wParam; lParam: lParam);
     public
         { Public declarations }
-        function SendMsg(Msg: TServerAppUserMsg; wParam: wParam;
-          lParam: lParam): LRESULT;
-        procedure MustSendUserMsg(Msg: TServerAppUserMsg; wParam: wParam;
-          lParam: lParam);
-
+        
         procedure MustSendStr(sourceHWND: HWND; Msg: TServerAppDataMsg;
           data: string);
         procedure MustSendJSON(sourceHWND: HWND; Msg: TServerAppDataMsg;
@@ -116,18 +112,6 @@ begin
         if SendMessage(hWndServer, Msg, wParam, lParam) = 0 then
             raise Exception.Create('server is not responding');
     end;
-end;
-
-procedure TServerApp.MustSendUserMsg(Msg: TServerAppUserMsg; wParam: wParam;
-  lParam: lParam);
-begin
-    MustSendMessage(WM_USER + integer(Msg), wParam, lParam);
-end;
-
-function TServerApp.SendMsg(Msg: TServerAppUserMsg; wParam: wParam;
-  lParam: lParam): LRESULT;
-begin
-    result := SendMessage(hWndServer, WM_USER + integer(Msg), wParam, lParam);
 end;
 
 procedure TServerApp.init_hWndServer;

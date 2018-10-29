@@ -9,10 +9,6 @@ uses
     Vcl.ToolWin, Vcl.ExtCtrls, Vcl.Grids, System.ImageList, Vcl.ImgList,
     UnitServerApp;
 
-const
-    { User-defined message }
-    UM_VALIDATEINPUT = WM_USER + 100;
-
 type
     THostAppCommand = (cmdStatusText, cmdConsoleText, cmdReadVar);
 
