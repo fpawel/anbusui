@@ -6,13 +6,13 @@ uses
     Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
     System.Classes, Vcl.Graphics,
     Vcl.Controls, Vcl.Forms, Vcl.Dialogs, VirtualTrees, System.ImageList,
-    Vcl.ImgList, Vcl.ExtCtrls;
+    Vcl.ImgList, Vcl.ExtCtrls, Vcl.StdCtrls, VclTee.TeeGDIPlus, VclTee.TeEngine,
+    VclTee.TeeProcs, VclTee.Chart,
+    VclTee.Series;
 
 type
 
     TNodeKind = (trdYear, trdMonth, trdDay, trdBucket);
-
-
 
     PTreeData = ^RTreeData;
 
@@ -40,8 +40,6 @@ type
         procedure TreeView1Change(Sender: TBaseVirtualTree; Node: PVirtualNode);
     private
         { Private declarations }
-
-
         function GetTreeData(Node: PVirtualNode): PTreeData;
         procedure CreateYearsNodes;
         procedure CreateMonthsNodes(ParentNode: PVirtualNode);
@@ -49,10 +47,24 @@ type
         procedure CreatePartiesNodes(ParentNode: PVirtualNode);
 
         property TreeData[Node: PVirtualNode]: PTreeData read GetTreeData;
+
     public
         { Public declarations }
         procedure ValidateData;
 
+    end;
+
+    TBucket = class
+        FBucketID: int64;
+        FCreatedAt: TDateTime;
+        FUpdatedAt: TDateTime;
+    end;
+
+    TSeriesRecord = class
+        FStoredAt: TDateTime;
+        FValue: double;
+        FVar: integer;
+        FAddr: integer;
     end;
 
 var
@@ -62,30 +74,79 @@ implementation
 
 {$R *.dfm}
 
-uses superobject, stringutils,
-    dateutils, UnitServerApp;
+uses superobject, stringutils, rest.json,
+    dateutils, UnitServerApp, UnitFormChartSeries, stringgridutils;
+
+var
+    AFormChartSeries: TFormChartSeries;
 
 procedure TFormBuckets.FormCreate(Sender: TObject);
 begin
     TreeView1.NodeDataSize := SizeOf(RTreeData);
+    AFormChartSeries := TFormChartSeries.Create(self);
+
+    with AFormChartSeries do
+    begin
+        Parent := self;
+        Align := alClient;
+        BorderStyle := bsNone;
+        Visible := true;
+        Font.Assign(self.Font);
+        Visible := false;
+    end;
+
+end;
+
+function JSONDate_To_Datetime(JSONDate: string): TDateTime;
+var
+    Year, Month, Day, Hour, Minute, Second, Millisecond: Word;
+begin
+    //"2016-08-24T22:53:31.687",
+    Year := StrToInt(Copy(JSONDate, 1, 4));
+    Month := StrToInt(Copy(JSONDate, 6, 2));
+    Day := StrToInt(Copy(JSONDate, 9, 2));
+    Hour := StrToInt(Copy(JSONDate, 12, 2));
+    Minute := StrToInt(Copy(JSONDate, 15, 2));
+    Second := StrToInt(Copy(JSONDate, 18, 2));
+    //Millisecond := StrToInt(Copy(JSONDate, 21, 2));
+
+    Result := EncodeDateTime(Year, Month, Day, Hour, Minute, Second,
+      Millisecond);
 end;
 
 procedure TFormBuckets.TreeView1Change(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
+var
+    i: ISuperObject;
+    s: string;
+    ser: TFastLineSeries;
 begin
-    // if Assigned(TreeData[Node]) AND (TreeData[Node].NodeKind = trdParty) then
-    // begin
-    // FormPartyView.party := TParty.Create(DataModule1.FDConnectionElcheseDB,
-    // TreeData[Node].Value);
-    // Node := TreeView1.GetFirst;
-    // while Assigned(Node) do
-    // begin
-    // if TreeView1.IsVisible[Node] then
-    // TreeView1.RepaintNode(Node);
-    // Node := TreeView1.GetNext(Node);
-    // end;
-    //
-    // end;
+
+    if Assigned(TreeData[Node]) AND (TreeData[Node].NodeKind = trdBucket) then
+    begin
+        AFormChartSeries.NewChart;
+
+        for i in ServerApp.MustGetResult('BucketsSvc.Vars',
+          SO(Format('[%d]', [TreeData[Node].Value]))) do
+            AFormChartSeries.AddVar(i.AsInteger);
+
+        for i in ServerApp.MustGetResult('BucketsSvc.Records',
+          SO(Format('[%d]', [TreeData[Node].Value]))) do
+        begin
+            s := i.AsJSon;
+            AFormChartSeries.SeriesOf(i.AsObject.i['Addr'], i.AsObject.i['Var'])
+              .AddXY(JSONDate_To_Datetime(i.AsObject.s['StoredAt']),
+              i.AsObject.D['Value']);;;
+
+        end;
+
+        AFormChartSeries.Visible := true;
+
+    end
+    else
+    begin
+        AFormChartSeries.Visible := false;
+    end;
 
 end;
 
@@ -139,29 +200,17 @@ var
     p: PTreeData;
 begin
     p := Sender.GetNodeData(Node);
-    case Column of
-        0:
-            begin
-                case p.NodeKind of
-                    trdYear:
-                        CellText := inttostr(p.Value);
-                    trdMonth:
-                        CellText := inttostr2(p.Value) + ' ' +
-                          month_name(p.Value);
+    case p.NodeKind of
+        trdYear:
+            CellText := inttostr(p.Value);
+        trdMonth:
+            CellText := inttostr2(p.Value) + ' ' + month_name(p.Value);
 
-                    trdDay:
-                        CellText := inttostr2(p.Value);
-                    trdBucket:
-                        CellText := DateToStr(p.BucketCreatedAt);
-                end;
-            end;
-        1:
-            begin
-                case p.NodeKind of
-                    trdBucket:
-                        CellText := inttostr(p.Value);
-                end;
-            end;
+        trdDay:
+            CellText := inttostr2(p.Value);
+        trdBucket:
+            CellText := FormatDateTime('hh:nn', p.BucketCreatedAt) + ' - ' +
+              FormatDateTime('hh:nn', p.BucketUpdatedAt);
     end;
 end;
 
@@ -186,7 +235,7 @@ var
     i: ISuperObject;
 begin
     for i in ServerApp.MustGetResult('BucketsSvc.Months',
-      SO(format('[%d]', [TreeData[ParentNode].Value]))) do
+      SO(Format('[%d]', [TreeData[ParentNode].Value]))) do
     begin
         Node := TreeView1.AddChild(ParentNode);
         TreeData[Node].Value := i.AsInteger;
@@ -201,7 +250,7 @@ var
     i: ISuperObject;
 begin
     for i in ServerApp.MustGetResult('BucketsSvc.Days',
-      SO(format('[%d, %d]', [TreeData[ParentNode.Parent].Value,
+      SO(Format('[%d, %d]', [TreeData[ParentNode.Parent].Value,
       TreeData[ParentNode].Value]))) do
     begin
         Node := TreeView1.AddChild(ParentNode);
@@ -214,37 +263,29 @@ end;
 procedure TFormBuckets.CreatePartiesNodes(ParentNode: PVirtualNode);
 var
     Node: PVirtualNode;
-    NodeData: PTreeData;
+    i: ISuperObject;
+    s: string;
+    b: TBucket;
 begin
-    // with TFDQuery.Create(nil) do
-    // begin
-    // Connection := DataModule1.FDConnectionElcheseDB;
-    // SQL.Text :=
-    // 'SELECT * FROM party_info WHERE year = :year AND month = :month AND day = :day ORDER BY created_at; ';
-    // ParamByName('day').Value := TreeData[ParentNode].Value;
-    // ParamByName('month').Value := TreeData[ParentNode.Parent].Value;
-    // ParamByName('year').Value := TreeData[ParentNode.Parent.Parent].Value;
-    // open;
-    // First;
-    // while not Eof do
-    // begin
-    // Node := TreeView1.AddChild(ParentNode);
-    // NodeData := TreeData[Node];
-    // NodeData.Value := FieldValues['party_id'];
-    // NodeData.NodeKind := trdParty;
-    // NodeData.PartyInfo := TPartyInfo.Create;
-    // NodeData.PartyInfo.FProdType := FieldValues['product_type_name'];
-    // NodeData.PartyInfo.FNote := FieldValues['note'];
-    // Next;
-    // end;
-    // Close;
-    // Free
-    // end;
+    for i in ServerApp.MustGetResult('BucketsSvc.Buckets',
+      SO(Format('[%d, %d, %d]', [TreeData[ParentNode.Parent.Parent].Value,
+      TreeData[ParentNode.Parent].Value, TreeData[ParentNode].Value]))) do
+    begin
+        Node := TreeView1.AddChild(ParentNode);
+        s := i.AsJSon;
+        b := TJson.JsonToObject<TBucket>(s);
+        TreeData[Node].Value := b.FBucketID;
+        TreeData[Node].NodeKind := trdBucket;
+        TreeData[Node].BucketCreatedAt := b.FCreatedAt;
+        TreeData[Node].BucketUpdatedAt := b.FUpdatedAt;
+        TreeView1.HasChildren[Node] := false;
+        b.Free;
+    end;
 end;
 
 function TFormBuckets.GetTreeData(Node: PVirtualNode): PTreeData;
 begin
-    result := PTreeData(TreeView1.GetNodeData(Node));
+    Result := PTreeData(TreeView1.GetNodeData(Node));
 end;
 
 procedure TFormBuckets.ValidateData;

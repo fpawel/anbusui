@@ -37,6 +37,11 @@ type
         procedure AddValue(addr, var_id: integer; value: double;
           time: TDateTime);
 
+        function AddVar(avar: integer): integer;
+        procedure sortListBox;
+
+        function SeriesOf(addr, var_id: integer):TFastLineSeries;
+
         procedure NewChart;
     end;
 
@@ -47,7 +52,7 @@ implementation
 
 {$R *.dfm}
 
-uses  stringutils, dateutils, StrUtils;
+uses stringutils, dateutils, StrUtils;
 
 procedure TFormChartSeries.FormCreate(Sender: TObject);
 begin
@@ -122,52 +127,66 @@ begin
         Result := 0;
 end;
 
-procedure TFormChartSeries.AddValue(addr, var_id: integer;
-value: double; time: TDateTime);
-var
-    ser: TFastLineSeries;
-    k: ProductVar;
-    sl: TStringList;
-    n, i: integer;
-    selected_vars: TDictionary<string,integer>;
+function TFormChartSeries.AddVar(avar: integer): integer;
 begin
+    exit(ListBox1.Items.Add(inttostr(avar)));
+end;
 
+procedure TFormChartSeries.sortListBox;
+var sl: TStringList;
+begin
+    sl := TStringList.create;
+    sl.Assign(ListBox1.Items);
+    sl.CustomSort(CompareVars);
+    ListBox1.Items.Assign(sl);
+    sl.Free;
+end;
 
+function TFormChartSeries.SeriesOf(addr, var_id: integer):TFastLineSeries;
+var
+    k: ProductVar;
+begin
     k.ProductSerial := addr;
     k.VarID := var_id;
+    if not FSeries.TryGetValue(k, result) then
+    begin
+        result := TFastLineSeries.create(nil);
+        result.XValues.DateTime := true;
+        result.title := 'адр:' + inttostr3(addr) + ' var:' + inttostr(var_id);
+        FSeries.Add(k, result);
+    end;
+
+end;
+
+procedure TFormChartSeries.AddValue(addr, var_id: integer; value: double;
+time: TDateTime);
+var
+    ser: TFastLineSeries;
+    n, i: integer;
+    selected_vars: TDictionary<string, integer>;
+begin
+
     if ListBox1.Items.IndexOf(inttostr(var_id)) = -1 then
     begin
-        n := ListBox1.Items.Add(inttostr(var_id));
+        n := AddVar(var_id);
         if var_id = 0 then
             ListBox1.Selected[n] := true;
 
-        selected_vars:=TDictionary<string,integer>.create;
+        selected_vars := TDictionary<string, integer>.create;
 
         for i := 0 to ListBox1.Items.Count - 1 do
             if ListBox1.Selected[i] then
-                 selected_vars.AddOrSetValue(ListBox1.Items[i],0);
+                selected_vars.AddOrSetValue(ListBox1.Items[i], 0);
 
-        sl := TStringList.create;
-        sl.Assign(ListBox1.Items);
-        sl.CustomSort(CompareVars);
-        ListBox1.Items.Assign(sl);
-        sl.Free;
+        sortListBox;
         for i := 0 to ListBox1.Items.Count - 1 do
-            ListBox1.Selected[i] := selected_vars.ContainsKey(ListBox1.Items[i]);
+            ListBox1.Selected[i] := selected_vars.ContainsKey
+              (ListBox1.Items[i]);
 
         selected_vars.Free;
     end;
 
-
-
-    if not FSeries.TryGetValue(k, ser) then
-    begin
-        ser := TFastLineSeries.create(nil);
-        ser.XValues.DateTime := true;
-        ser.title := IntToStr(addr) + ':' + inttostr(var_id);
-        FSeries.Add(k, ser);
-    end;
-
+    ser := SeriesOf(addr,var_id);
     ser.AddXY(time, value);
 
     with ListBox1 do
@@ -178,8 +197,6 @@ begin
                 Chart1.AddSeries(ser);
         end;
     end;
-
-
 
 end;
 
