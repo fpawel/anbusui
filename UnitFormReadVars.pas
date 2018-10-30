@@ -389,7 +389,7 @@ begin
             begin
 
                 if TryStrToInt(Value, n) and (n > 0) and (n < 256) then
-                    ServerApp.GetResponse('0', 'SetsSvc.SetAddr',
+                    ServerApp.GetResponse( 'SetsSvc.SetAddr',
                       SO(Format('{"place": %d, "addr":%d}',
                       [col2place(ACol), n])))
                 else
@@ -399,7 +399,7 @@ begin
             if ACol = 0 then
             begin
                 if TryStrToInt(Value, n) and (n > -1) then
-                    ServerApp.GetResponse('0', 'SetsSvc.SetVar',
+                    ServerApp.GetResponse( 'SetsSvc.SetVar',
                       SO(Format('{"index":%d,"var":%d}', [row2var(ARow), n])))
                 else
                     UpdateNetwork('SetsSvc.Network');
@@ -521,7 +521,7 @@ procedure TFormReadVars.SetRowChecked(row: Integer; v: Boolean);
 begin
     FNetwork.FVars[row2var(row)].FUnchecked := v;
     StringGrid_RedrawRow(StringGrid1, row);
-    ServerApp.GetResponse('0', 'SetsSvc.ToggleVar',
+    ServerApp.GetResponse('SetsSvc.ToggleVar',
       SO(Format('[%d]', [row2var(row)])));
 end;
 
@@ -535,7 +535,7 @@ begin
     FNetwork.FPlaces[col2place(col)].FUnchecked := not FNetwork.FPlaces
       [col2place(col)].FUnchecked;
     StringGrid_RedrawCol(StringGrid1, col);
-    ServerApp.GetResponse('0', 'SetsSvc.TogglePlace',
+    ServerApp.GetResponse('SetsSvc.TogglePlace',
       SO(Format('[%d]', [col2place(col)])));
 end;
 
@@ -582,7 +582,7 @@ end;
 
 procedure TFormReadVars.UpdateNetwork(const method: string);
 begin
-    SetNetwork(ServerApp.GetResponseNetwork('0', method, SO('{}')));
+    SetNetwork(ServerApp.MustGetResponseNetwork(method, SO('{}')));
 end;
 
 end.

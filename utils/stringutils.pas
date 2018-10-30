@@ -12,10 +12,17 @@ function cut_str(s:string;c:TCanvas; w:integer):string;
 
 function StrFromCopydata(cd: PCOPYDATASTRUCT):string;
 
+function month_name(month_number:integer):string;
+
 implementation
 
 
-uses System.SysUtils;
+uses System.SysUtils, System.DateUtils;
+
+function month_name(month_number:integer):string;
+begin
+    Result := FormatDateTime('mmmm', EncodeDateTime(2000, month_number, 1, 0, 0, 0, 0));
+end;
 
 function StrFromCopydata(cd: PCOPYDATASTRUCT):string;
 begin

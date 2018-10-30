@@ -10,7 +10,7 @@ uses
     UnitServerApp;
 
 type
-    THostAppCommand = (cmdStatusText, cmdConsoleText, cmdReadVar);
+    THostAppCommand = (cmdNotifyText, cmdReadVar);
 
     TPlace = class
         FAddr: integer;
@@ -20,6 +20,12 @@ type
     TVar = class
         FVar: integer;
         FUnchecked: boolean;
+    end;
+
+    TNotifyText = class
+        FText: string;
+        FLevel: string;
+        FKind: string;
     end;
 
     TAnbusMainForm = class(TForm)
@@ -65,7 +71,6 @@ type
           TabIndex: integer; const Rect: TRect; Active: boolean);
         procedure PageControlMainChange(Sender: TObject);
         procedure FormShow(Sender: TObject);
-        procedure Button5Click(Sender: TObject);
         procedure ComboBox1KeyDown(Sender: TObject; var Key: Word;
           Shift: TShiftState);
         procedure ToolButtonConsoleHideClick(Sender: TObject);
@@ -81,8 +86,10 @@ type
         { Private declarations }
         FhWndTip: THandle;
 
-        procedure SetStatusText(Ok: boolean; AText: string);
-        procedure AddConsoleText(Ok: boolean; AText: string);
+        procedure HandleNotifyText(t: TNotifyText);
+
+        procedure SetStatusText(level: string; AText: string);
+        procedure AddConsoleText(level: string; AText: string);
 
         procedure HandleCopydata(var Message: TMessage); message WM_COPYDATA;
         procedure WMWindowPosChanged(var AMessage: TMessage);
@@ -104,7 +111,14 @@ implementation
 uses serverapp_msg, rest.json, runhostapp, json, vclutils,
     model_config, PropertiesFormUnit,
     UnitFormReadVars, stringutils, model_network, ComponentBaloonHintU,
-    richeditutils, UnitFormChartSeries, Unit1, superobject, ujsonrpc;
+    richeditutils, UnitFormChartSeries, Unit1, superobject, ujsonrpc,
+  UnitFormBuckets;
+
+const
+    n_console = 'console';
+    n_status = 'status';
+    n_info = 'info';
+    n_err = 'error';
 
 function CommandsFileName: string;
 begin
@@ -129,14 +143,11 @@ begin
 
 end;
 
-procedure TAnbusMainForm.Button5Click(Sender: TObject);
-begin
-    ServerApp.CloseServer;
-    Close;
-end;
-
 procedure TAnbusMainForm.ComboBox1KeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
+var
+    r: IJsonRpcParsed;
+    t:TJsonRpcObjectType;
 begin
     with ComboBox1 do
         case Key of
@@ -158,14 +169,23 @@ begin
                     Text := Trim(Text);
                     if Text <> '' then
                     begin
-                        ServerApp.MustSendStr(Handle,
-                          dmsgPerformTextCommand, Text);
-
-                        if Items.IndexOf(Text) > -1 then
-                            Items.Exchange(Items.IndexOf(Text), 0)
+                        r := ServerApp.GetResponse('CmdSvc.Perform',
+                          SO(Format('["%s"]', [Text])));
+                          t := r.GetMessageType;
+                        if t = jotError then
+                        begin
+                            AddConsoleText(n_err,
+                              r.GetMessagePayload.AsJsonObject
+                              ['error']['message'].AsString);
+                        end
                         else
-                            Items.insert(0, Text);
-                        Items.SaveToFile(CommandsFileName);
+                        begin
+                            if Items.IndexOf(Text) > -1 then
+                                Items.Exchange(Items.IndexOf(Text), 0)
+                            else
+                                Items.insert(0, Text);
+                            Items.SaveToFile(CommandsFileName);
+                        end;
                         Text := '';
                     end;
                     Key := 0;
@@ -179,7 +199,6 @@ var
     cd: PCOPYDATASTRUCT;
     cmd: THostAppCommand;
     response: TObject;
-    tm: TPanalibTextMessage;
     read_var: TReadVar;
 begin
     cd := PCOPYDATASTRUCT(Message.LParam);
@@ -194,14 +213,14 @@ begin
                 FormReadVars.HandleReadVar(read_var);
                 if read_var.FError = '' then
                 begin
-                    SetStatusText(true,
+                    SetStatusText(n_info,
                       Format('%s: %g',
                       [FormReadVars.FormatAddrPlace(read_var.FPlace,
                       read_var.FVarIndex), read_var.FValue]));
                 end
                 else
                 begin
-                    SetStatusText(false,
+                    SetStatusText(n_err,
                       Format('%s: %s',
                       [FormReadVars.FormatAddrPlace(read_var.FPlace,
                       read_var.FVarIndex), read_var.FError]));
@@ -209,24 +228,10 @@ begin
                 read_var.Free;
             end;
 
-        cmdStatusText:
-            begin
-                response := TJson.JsonToObject<TPanalibTextMessage>
-                  (StrFromCopydata(cd));
-                tm := TPanalibTextMessage(response);
-                SetStatusText(tm.FOk, tm.FText);
-                tm.Free
-            end;
+        cmdNotifyText:
+            HandleNotifyText(TJson.JsonToObject<TNotifyText>
+              (StrFromCopydata(cd)));
 
-        cmdConsoleText:
-            begin
-                response := TJson.JsonToObject<TPanalibTextMessage>
-                  (StrFromCopydata(cd));
-                tm := TPanalibTextMessage(response);
-                SetStatusText(tm.FOk, tm.FText);
-                AddConsoleText(tm.FOk, tm.FText);
-                tm.Free
-            end;
     end;
 end;
 
@@ -262,11 +267,19 @@ begin
         NewChart;
     end;
 
+     with FormBuckets do
+    begin
+        Parent := TabSheetArchive;
+        Align := alClient;
+        BorderStyle := bsNone;
+        Visible := true;
+        Font.Assign(Self.Font);
+    end;
+
     FormReadVars.UpdateNetwork('SetsSvc.Network');
 
     PropertiesForm.SetConfig(TJson.JsonToObject<TConfig>
-      (ServerApp.GetResponse('0', 'SetsSvc.UserConfig', SO('{}'))
-      .GetMessagePayload.AsJsonObject['result'].AsString));
+      (ServerApp.MustGetResult( 'SetsSvc.UserConfig', SO('{}')).AsString));
 
     // ServerApp.MustSendUserMsg(msgPeer, 0, 0);
 end;
@@ -274,6 +287,7 @@ end;
 procedure TAnbusMainForm.PageControlMainChange(Sender: TObject);
 begin
     (Sender as TPageControl).Repaint;
+    FormBuckets.ValidateData;
 end;
 
 procedure TAnbusMainForm.PageControlMainDrawTab(Control: TCustomTabControl;
@@ -292,15 +306,6 @@ procedure TAnbusMainForm.WMWindowPosChanged(var AMessage: TMessage);
 begin
     CloseWindow(FhWndTip);
     inherited;
-end;
-
-procedure TAnbusMainForm.SetStatusText(Ok: boolean; AText: string);
-begin
-    if Ok then
-        PanelStatus.Font.Color := clBlack
-    else
-        PanelStatus.Font.Color := clRed;
-    PanelStatus.Caption := AText;
 end;
 
 procedure TAnbusMainForm.ToolButton3Click(Sender: TObject);
@@ -362,24 +367,37 @@ begin
 
 end;
 
-procedure TAnbusMainForm.AddConsoleText(Ok: boolean; AText: string);
+procedure TAnbusMainForm.SetStatusText(level: string; AText: string);
+begin
+    if level = n_info then
+        PanelStatus.Font.Color := clBlack
+    else if level = n_err then
+        PanelStatus.Font.Color := clRed
+    else
+        PanelStatus.Font.Color := clBlack;
+    PanelStatus.Caption := AText;
+end;
+
+procedure TAnbusMainForm.AddConsoleText(level: string; AText: string);
 begin
     with RichEdit1 do
     begin
         SendMessage(Handle, EM_SCROLL, SB_LINEDOWN, 0);
         SelStart := Length(RichEdit1.Text);
-        if Ok then
-        begin
-            RichEdit_AddText(RichEdit1, clBlack, AText);
-
-        end
+        if level = n_info then
+            RichEdit_AddText(RichEdit1, clBlack, AText)
         else
-        begin
             RichEdit_AddText2(RichEdit1, clRed, cl3dLight, AText);
-        end;
-
         SendMessage(Handle, EM_SCROLL, SB_LINEDOWN, 0);
     end;
+end;
+
+procedure TAnbusMainForm.HandleNotifyText(t: TNotifyText);
+begin
+    SetStatusText(t.FLevel, t.FText);
+    if t.FKind = n_console then
+        AddConsoleText(t.FLevel, t.FText);
+
 end;
 
 end.

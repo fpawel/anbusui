@@ -26,7 +26,8 @@ uses
   superxmlparser in 'utils\superobject\superxmlparser.pas',
   pipe in 'utils\pipe.pas',
   PropertiesFormUnit in 'PropertiesFormUnit.pas' {PropertiesForm},
-  PropertyValueEditors in 'PropertyValueEditors.pas';
+  PropertyValueEditors in 'PropertyValueEditors.pas',
+  UnitFormBuckets in 'UnitFormBuckets.pas' {FormBuckets};
 
 {$R *.res}
 
@@ -39,5 +40,6 @@ begin
   Application.CreateForm(TFormPopup, FormPopup);
   Application.CreateForm(TFormChartSeries, FormChartSeries);
   Application.CreateForm(TPropertiesForm, PropertiesForm);
+  Application.CreateForm(TFormBuckets, FormBuckets);
   Application.Run;
 end.

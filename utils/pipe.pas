@@ -13,6 +13,7 @@ type
         { Private declarations }
         _hPipe: THANDLE; // дескриптор
         FName: string;
+        FId:integer;
         procedure _ReadFile(var Buffer; numberOfbytesToRead: DWORD);
         procedure _WriteFile(var Buffer; numberOfbytesToWrite: DWORD);
         function _GetResponse(request: string): string;
@@ -20,7 +21,7 @@ type
 
         { Public declarations }
         Constructor Create(AName: string);
-        function GetResponse(const id: string; const method: string;
+        function GetResponse(const method: string;
             params: ISuperObject): IJsonRpcParsed;
     end;
 
@@ -43,6 +44,7 @@ end;
 Constructor TPipe.Create(AName: string);
 begin
     FName := AName;
+    FId := 0;
 end;
 
 procedure TPipe._WriteFile(var Buffer; numberOfbytesToWrite: DWORD);
@@ -110,13 +112,14 @@ begin
     result := TEncoding.UTF8.GetString(read_Buffer);
 end;
 
-function TPipe.GetResponse(const id: string; const method: string;
+function TPipe.GetResponse( const method: string;
   params: ISuperObject): IJsonRpcParsed;
 var
     requestObj: IJsonRpcMessage;
     strResponse: string;
 begin
-    requestObj := TJsonRpcMessage.request(id, method, params);
+    FId := FId + 1;
+    requestObj := TJsonRpcMessage.request(FId, method, params);
     strResponse := _GetResponse(requestObj.AsJSon(true, true));
     exit( TJsonRpcMessage.Parse(strResponse) );
 end;

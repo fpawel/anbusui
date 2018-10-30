@@ -25,10 +25,7 @@ type TReadVar = class
     FError: string;
 end;
 
-type TPanalibTextMessage = class
-    FText: string;
-    FOk: boolean;
-end;
+
 
 implementation
 

@@ -11,23 +11,17 @@ type
         procedure DataModuleCreate(Sender: TObject);
     private
         { Private declarations }
-        hWndServer: HWND;
-        procedure init_hWndServer;
-        procedure MustSendMessage(Msg: UINT; wParam: wParam; lParam: lParam);
+
     public
         { Public declarations }
-        
-        procedure MustSendStr(sourceHWND: HWND; Msg: TServerAppDataMsg;
-          data: string);
-        procedure MustSendJSON(sourceHWND: HWND; Msg: TServerAppDataMsg;
-          data: TObject);
 
-        procedure CloseServer;
+        function MustGetResult(const method: string; params: ISuperObject)
+          : ISuperObject;
 
-        function GetResponse(const id: string; const method: string;
-          params: ISuperObject): IJsonRpcParsed;
+        function GetResponse(const method: string; params: ISuperObject)
+          : IJsonRpcParsed;
 
-        function GetResponseNetwork(const id: string; const method: string;
+        function MustGetResponseNetwork(const method: string;
           params: ISuperObject): TNetwork;
 
         function SetConfigProperyValue(p: TChangedPropertyValue): string;
@@ -50,21 +44,15 @@ var
 
 procedure TServerApp.DataModuleCreate(Sender: TObject);
 begin
-    init_hWndServer;
     pipe_conn := TPipe.Create('\\.\pipe\anbus');
 
-end;
-
-procedure TServerApp.CloseServer;
-begin
-    SendMessage(hWndServer, WM_CLOSE, 0, 0);
 end;
 
 function TServerApp.SetConfigProperyValue(p: TChangedPropertyValue): String;
 var
     i: IJsonRpcParsed;
 begin
-    i := pipe_conn.GetResponse('0', 'SetsSvc.SetValue',
+    i := pipe_conn.GetResponse('SetsSvc.SetValue',
       SO(TJson.ObjectToJsonString(p)));
 
     case i.GetMessageType of
@@ -81,64 +69,36 @@ begin
 
 end;
 
-function TServerApp.GetResponseNetwork(const id: string; const method: string;
+function TServerApp.MustGetResponseNetwork(const method: string;
   params: ISuperObject): TNetwork;
 var
-    p: IJsonRpcParsed;
+    p: ISuperObject;
     network: TNetwork;
     str_response: string;
 begin
-
-    p := ServerApp.GetResponse(id, method, params);
-    str_response := p.GetMessagePayload.AsJsonObject['result'].AsString;
+    p := ServerApp.MustGetResult(method, params);
+    str_response := p.AsJSon;
     result := TJson.JsonToObject<TNetwork>(str_response);
 end;
 
-function TServerApp.GetResponse(const id: string; const method: string;
-  params: ISuperObject): IJsonRpcParsed;
+function TServerApp.GetResponse(const method: string; params: ISuperObject)
+  : IJsonRpcParsed;
 begin
-    result := pipe_conn.GetResponse(id, method, params);
-
-    if result.GetMessageType <> jotSuccess then
-        raise Exception.Create(Format('%s%s'#13'%s', [method, params.AsString,
-          result.GetMessagePayload.AsJSon(true, true)]));
+    exit(pipe_conn.GetResponse(method, params));
 end;
 
-procedure TServerApp.MustSendMessage(Msg: UINT; wParam: wParam; lParam: lParam);
+function TServerApp.MustGetResult(const method: string; params: ISuperObject)
+  : ISuperObject;
 begin
-    if SendMessage(hWndServer, Msg, wParam, lParam) = 0 then
+    with pipe_conn.GetResponse(method, params) do
     begin
-        init_hWndServer;
-        if SendMessage(hWndServer, Msg, wParam, lParam) = 0 then
-            raise Exception.Create('server is not responding');
+        if GetMessageType <> jotSuccess then
+            raise Exception.Create(Format('%s%s'#13'%s',
+              [method, params.AsString, GetMessagePayload.AsJSon(true, true)]));
+        result := GetMessagePayload.AsJsonObject['result'];
+
     end;
-end;
 
-procedure TServerApp.init_hWndServer;
-begin
-    hWndServer := FindWindow('AnbusServerAppWindow', nil);
-    if hWndServer = 0 then
-        raise Exception.Create('server not found');
-
-end;
-
-procedure TServerApp.MustSendStr(sourceHWND: HWND; Msg: TServerAppDataMsg;
-  data: string);
-var
-    cd: COPYDATASTRUCT;
-    ptr_bytes: TBytes;
-begin
-    ptr_bytes := WideBytesOf(data);
-    cd.cbData := Length(ptr_bytes);
-    cd.lpData := ptr_bytes;
-    cd.dwData := integer(Msg);
-    MustSendMessage(WM_COPYDATA, sourceHWND, integer(@cd));
-end;
-
-procedure TServerApp.MustSendJSON(sourceHWND: HWND; Msg: TServerAppDataMsg;
-  data: TObject);
-begin
-    MustSendStr(sourceHWND, Msg, TJson.ObjectToJsonString(data));
 end;
 
 end.
