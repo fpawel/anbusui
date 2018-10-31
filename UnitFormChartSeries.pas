@@ -28,6 +28,7 @@ type
         Chart1: TChart;
         procedure FormCreate(Sender: TObject);
         procedure ListBox1Click(Sender: TObject);
+    procedure Chart1AfterDraw(Sender: TObject);
     private
         { Private declarations }
         FSeries: TDictionary<ProductVar, TFastLineSeries>;
@@ -130,6 +131,23 @@ end;
 function TFormChartSeries.AddVar(avar: integer): integer;
 begin
     exit(ListBox1.Items.Add(inttostr(avar)));
+end;
+
+procedure TFormChartSeries.Chart1AfterDraw(Sender: TObject);
+var
+  xPos, yPos : integer;
+begin
+  Chart1.Canvas.Pen.Color := clRed;
+  Chart1.Canvas.Pen.Style := psSolid;
+  Chart1.Canvas.Pen.Width := 1;
+  Chart1.Canvas.Pen.Mode := pmCopy;
+
+  xPos := Chart1.BottomAxis.CalcPosValue(CurrentXValue);
+  yPos := Chart1.LeftAxis.CalcPosValue(CurrentYValue);
+
+  // Parameters are
+  //  X-Coord, Y-Coord, X-Radius, Y-Radius, Start Angle, End Angle, Hole%
+  Chart1.Canvas.Donut(xPos, yPos, 3, 3, 0, 360, 0);
 end;
 
 procedure TFormChartSeries.sortListBox;

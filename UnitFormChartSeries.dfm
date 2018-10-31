@@ -111,6 +111,7 @@ object FormChartSeries: TFormChartSeries
       RightAxis.Visible = False
       TopAxis.Visible = False
       View3D = False
+      OnAfterDraw = Chart1AfterDraw
       Align = alClient
       BevelOuter = bvNone
       Color = clWindow
