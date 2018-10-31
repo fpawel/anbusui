@@ -15,11 +15,24 @@ object AnbusMainForm: TAnbusMainForm
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 18
+  object Splitter2: TSplitter
+    Left = 0
+    Top = 370
+    Width = 1059
+    Height = 5
+    Cursor = crVSplit
+    Align = alBottom
+    Color = clBtnFace
+    ParentColor = False
+    ExplicitLeft = -6
+    ExplicitTop = 283
+    ExplicitWidth = 537
+  end
   object PageControlMain: TPageControl
     Left = 5
     Top = 5
     Width = 1049
-    Height = 489
+    Height = 365
     ActivePage = TabSheetVars
     Align = alClient
     MultiLine = True
@@ -30,14 +43,16 @@ object AnbusMainForm: TAnbusMainForm
     TabWidth = 50
     OnChange = PageControlMainChange
     OnDrawTab = PageControlMainDrawTab
+    ExplicitHeight = 489
     object TabSheetVars: TTabSheet
       Caption = #1054#1087#1088#1086#1089
       ImageIndex = 2
+      ExplicitHeight = 481
       object Splitter1: TSplitter
         Left = 542
         Top = 0
         Width = 5
-        Height = 481
+        Height = 357
         Color = clMoneyGreen
         ParentColor = False
         ExplicitLeft = 558
@@ -48,101 +63,11 @@ object AnbusMainForm: TAnbusMainForm
         Left = 5
         Top = 0
         Width = 537
-        Height = 481
+        Height = 357
         Align = alLeft
         BevelOuter = bvNone
         TabOrder = 0
-        object Splitter2: TSplitter
-          Left = 0
-          Top = 326
-          Width = 537
-          Height = 5
-          Cursor = crVSplit
-          Align = alBottom
-          Color = clBtnFace
-          ParentColor = False
-          ExplicitLeft = -6
-          ExplicitTop = 283
-        end
-        object PanelInput: TPanel
-          Left = 0
-          Top = 331
-          Width = 537
-          Height = 150
-          Align = alBottom
-          BevelOuter = bvNone
-          Color = clWindow
-          Constraints.MinHeight = 150
-          ParentBackground = False
-          TabOrder = 0
-          object RichEdit1: TRichEdit
-            Left = 0
-            Top = 58
-            Width = 537
-            Height = 92
-            Align = alClient
-            BorderStyle = bsNone
-            Font.Charset = RUSSIAN_CHARSET
-            Font.Color = clWindowText
-            Font.Height = -16
-            Font.Name = 'Tahoma'
-            Font.Style = []
-            ParentFont = False
-            ReadOnly = True
-            ScrollBars = ssVertical
-            TabOrder = 0
-            Zoom = 100
-          end
-          object PanelConsoleHeader: TPanel
-            Left = 0
-            Top = 0
-            Width = 537
-            Height = 32
-            Align = alTop
-            Alignment = taLeftJustify
-            BevelOuter = bvNone
-            Caption = '    '#1042#1074#1086#1076
-            Color = clGradientInactiveCaption
-            Font.Charset = DEFAULT_CHARSET
-            Font.Color = clGray
-            Font.Height = -16
-            Font.Name = 'Tahoma'
-            Font.Style = [fsBold]
-            ParentBackground = False
-            ParentFont = False
-            TabOrder = 1
-            OnDblClick = ToolButtonConsoleHideClick
-            object ToolBar4: TToolBar
-              Left = 504
-              Top = 0
-              Width = 33
-              Align = alRight
-              ButtonHeight = 31
-              ButtonWidth = 32
-              Caption = 'ToolBar1'
-              EdgeInner = esNone
-              EdgeOuter = esNone
-              Images = ImageList3
-              TabOrder = 0
-              object ToolButtonConsoleHide: TToolButton
-                Left = 0
-                Top = 0
-                Caption = 'ToolButtonConsoleHide'
-                ImageIndex = 0
-                OnClick = ToolButtonConsoleHideClick
-              end
-            end
-          end
-          object ComboBox1: TComboBox
-            Left = 0
-            Top = 32
-            Width = 537
-            Height = 26
-            Align = alTop
-            TabOrder = 2
-            OnKeyDown = ComboBox1KeyDown
-          end
-        end
+        ExplicitHeight = 481
         object Panel1: TPanel
           Left = 0
           Top = 0
@@ -160,7 +85,7 @@ object AnbusMainForm: TAnbusMainForm
           Font.Style = [fsBold]
           ParentBackground = False
           ParentFont = False
-          TabOrder = 1
+          TabOrder = 0
           object ToolBar1: TToolBar
             Left = 408
             Top = 0
@@ -220,65 +145,43 @@ object AnbusMainForm: TAnbusMainForm
         Left = 0
         Top = 0
         Width = 5
-        Height = 481
+        Height = 357
         Align = alLeft
         BevelOuter = bvNone
         TabOrder = 1
+        ExplicitHeight = 481
       end
     end
     object TabSheetSettings: TTabSheet
       Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
       ImageIndex = 4
+      ExplicitHeight = 481
     end
     object TabSheetArchive: TTabSheet
       Caption = #1040#1088#1093#1080#1074
       ImageIndex = 1
+      ExplicitHeight = 481
     end
   end
   object Panel14: TPanel
     Left = 0
     Top = 5
     Width = 5
-    Height = 489
+    Height = 365
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitHeight = 489
   end
   object Panel4: TPanel
     Left = 1054
     Top = 5
     Width = 5
-    Height = 489
+    Height = 365
     Align = alRight
     BevelOuter = bvNone
     TabOrder = 2
-  end
-  object Panel8: TPanel
-    Left = 0
-    Top = 494
-    Width = 1059
-    Height = 5
-    Align = alBottom
-    BevelOuter = bvNone
-    TabOrder = 3
-  end
-  object PanelStatus: TPanel
-    Left = 0
-    Top = 499
-    Width = 1059
-    Height = 26
-    Align = alBottom
-    Alignment = taLeftJustify
-    BevelOuter = bvNone
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clGray
-    Font.Height = -16
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentBackground = False
-    ParentColor = True
-    ParentFont = False
-    TabOrder = 4
+    ExplicitHeight = 489
   end
   object Panel2: TPanel
     Left = 0
@@ -287,7 +190,91 @@ object AnbusMainForm: TAnbusMainForm
     Height = 5
     Align = alTop
     BevelOuter = bvNone
-    TabOrder = 5
+    TabOrder = 3
+  end
+  object PanelInput: TPanel
+    Left = 0
+    Top = 375
+    Width = 1059
+    Height = 150
+    Align = alBottom
+    BevelOuter = bvNone
+    Color = clWindow
+    Constraints.MinHeight = 150
+    ParentBackground = False
+    TabOrder = 4
+    ExplicitTop = 331
+    ExplicitWidth = 537
+    object RichEdit1: TRichEdit
+      Left = 0
+      Top = 58
+      Width = 1059
+      Height = 92
+      Align = alClient
+      BorderStyle = bsNone
+      Font.Charset = RUSSIAN_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -16
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      ParentFont = False
+      ReadOnly = True
+      ScrollBars = ssVertical
+      TabOrder = 0
+      Zoom = 100
+      ExplicitWidth = 537
+    end
+    object PanelStatus: TPanel
+      Left = 0
+      Top = 0
+      Width = 1059
+      Height = 32
+      Align = alTop
+      Alignment = taLeftJustify
+      BevelOuter = bvNone
+      Color = clGradientInactiveCaption
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clGray
+      Font.Height = -15
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      ParentBackground = False
+      ParentFont = False
+      TabOrder = 1
+      OnDblClick = ToolButtonConsoleHideClick
+      ExplicitTop = 1
+      object ToolBar4: TToolBar
+        Left = 1026
+        Top = 0
+        Width = 33
+        Align = alRight
+        ButtonHeight = 31
+        ButtonWidth = 32
+        Caption = 'ToolBar1'
+        EdgeInner = esNone
+        EdgeOuter = esNone
+        Images = ImageList3
+        TabOrder = 0
+        ExplicitLeft = 504
+        object ToolButtonConsoleHide: TToolButton
+          Left = 0
+          Top = 0
+          Caption = 'ToolButtonConsoleHide'
+          ImageIndex = 0
+          OnClick = ToolButtonConsoleHideClick
+        end
+      end
+    end
+    object ComboBox1: TComboBox
+      Left = 0
+      Top = 32
+      Width = 1059
+      Height = 26
+      Align = alTop
+      TabOrder = 2
+      OnKeyDown = ComboBox1KeyDown
+      ExplicitWidth = 537
+    end
   end
   object ImageList4: TImageList
     ColorDepth = cd32Bit
@@ -299,7 +286,7 @@ object AnbusMainForm: TAnbusMainForm
     Left = 768
     Top = 34
     Bitmap = {
-      494C010102002403940314001400FFFFFF002110FFFFFFFFFFFFFFFF424D3600
+      494C0101020024039C0314001400FFFFFF002110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000500000001400000001002000000000000019
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -551,7 +538,7 @@ object AnbusMainForm: TAnbusMainForm
     Left = 224
     Top = 218
     Bitmap = {
-      494C01010200D401EC0219001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
+      494C01010200D401F40219001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000640000001900000001002000000000001027
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -893,7 +880,7 @@ object AnbusMainForm: TAnbusMainForm
     Left = 264
     Top = 146
     Bitmap = {
-      494C01010400D401080319001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
+      494C01010400D401100319001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
       000000000000360000002800000064000000320000000100200000000000204E
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

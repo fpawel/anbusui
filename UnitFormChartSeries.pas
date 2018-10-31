@@ -152,7 +152,7 @@ begin
     begin
         result := TFastLineSeries.create(nil);
         result.XValues.DateTime := true;
-        result.title := 'адр:' + inttostr3(addr) + ' var:' + inttostr(var_id);
+        result.title :=  inttostr3(addr) + ':' + inttostr(var_id);
         FSeries.Add(k, result);
     end;
 

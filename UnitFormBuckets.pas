@@ -79,6 +79,7 @@ uses superobject, stringutils, rest.json,
 
 var
     AFormChartSeries: TFormChartSeries;
+    DateTimeFmtStngs: TFormatSettings;
 
 procedure TFormBuckets.FormCreate(Sender: TObject);
 begin
@@ -95,31 +96,25 @@ begin
         Visible := false;
     end;
 
-end;
+    DateTimeFmtStngs := TFormatSettings.Create(GetThreadLocale);
+    with DateTimeFmtStngs do
+    begin
+        DateSeparator := '.';
+        ShortDateFormat := 'dd/MM/yyyy';
+        TimeSeparator := ':';
+        LongTimeFormat := 'hh:mm:ss';
+    end;
 
-function JSONDate_To_Datetime(JSONDate: string): TDateTime;
-var
-    Year, Month, Day, Hour, Minute, Second, Millisecond: Word;
-begin
-    //"2016-08-24T22:53:31.687",
-    Year := StrToInt(Copy(JSONDate, 1, 4));
-    Month := StrToInt(Copy(JSONDate, 6, 2));
-    Day := StrToInt(Copy(JSONDate, 9, 2));
-    Hour := StrToInt(Copy(JSONDate, 12, 2));
-    Minute := StrToInt(Copy(JSONDate, 15, 2));
-    Second := StrToInt(Copy(JSONDate, 18, 2));
-    //Millisecond := StrToInt(Copy(JSONDate, 21, 2));
-
-    Result := EncodeDateTime(Year, Month, Day, Hour, Minute, Second,
-      Millisecond);
 end;
 
 procedure TFormBuckets.TreeView1Change(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
 var
     i: ISuperObject;
+    j: TSuperArray;
     s: string;
     ser: TFastLineSeries;
+    t: TDateTime;
 begin
 
     if Assigned(TreeData[Node]) AND (TreeData[Node].NodeKind = trdBucket) then
@@ -133,10 +128,12 @@ begin
         for i in ServerApp.MustGetResult('BucketsSvc.Records',
           SO(Format('[%d]', [TreeData[Node].Value]))) do
         begin
-            s := i.AsJSon;
-            AFormChartSeries.SeriesOf(i.AsObject.i['Addr'], i.AsObject.i['Var'])
-              .AddXY(JSONDate_To_Datetime(i.AsObject.s['StoredAt']),
-              i.AsObject.D['Value']);;;
+            j := i.AsArray;
+            t := EncodeDateTime(j[2].AsInteger, j[3].AsInteger, j[4].AsInteger,
+              j[5].AsInteger, j[6].AsInteger, j[7].AsInteger, j[8].AsInteger);
+
+            AFormChartSeries.SeriesOf(j[0].AsInteger, j[1].AsInteger)
+              .AddXY(t, j[9].AsDouble);;;
 
         end;
 

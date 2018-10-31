@@ -36,8 +36,6 @@ type
         TabSheetArchive: TTabSheet;
         Panel14: TPanel;
         Panel4: TPanel;
-        Panel8: TPanel;
-        PanelStatus: TPanel;
         PopupMenu1: TPopupMenu;
         N4: TMenuItem;
         N5: TMenuItem;
@@ -53,7 +51,7 @@ type
         PanelNetwork: TPanel;
         Splitter1: TSplitter;
         Panel5: TPanel;
-        PanelConsoleHeader: TPanel;
+    PanelStatus: TPanel;
         ToolBar4: TToolBar;
         ToolButtonConsoleHide: TToolButton;
         ImageList3: TImageList;
@@ -375,7 +373,7 @@ begin
         PanelStatus.Font.Color := clRed
     else
         PanelStatus.Font.Color := clBlack;
-    PanelStatus.Caption := AText;
+    PanelStatus.Caption := '    ' + AText;
 end;
 
 procedure TAnbusMainForm.AddConsoleText(level: string; AText: string);
