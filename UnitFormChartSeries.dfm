@@ -14,11 +14,20 @@ object FormChartSeries: TFormChartSeries
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 18
+  object Label1: TLabel
+    Left = 0
+    Top = 576
+    Width = 1000
+    Height = 18
+    Align = alBottom
+    Caption = 'Label1'
+    ExplicitWidth = 41
+  end
   object Panel14: TPanel
     Left = 0
     Top = 5
     Width = 5
-    Height = 589
+    Height = 571
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
@@ -36,7 +45,7 @@ object FormChartSeries: TFormChartSeries
     Left = 995
     Top = 5
     Width = 5
-    Height = 589
+    Height = 571
     Align = alRight
     BevelOuter = bvNone
     TabOrder = 2
@@ -54,7 +63,7 @@ object FormChartSeries: TFormChartSeries
     Left = 5
     Top = 5
     Width = 5
-    Height = 589
+    Height = 571
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 4
@@ -63,7 +72,7 @@ object FormChartSeries: TFormChartSeries
     Left = 10
     Top = 5
     Width = 87
-    Height = 589
+    Height = 571
     Align = alLeft
     ItemHeight = 18
     MultiSelect = True
@@ -74,7 +83,7 @@ object FormChartSeries: TFormChartSeries
     Left = 97
     Top = 5
     Width = 898
-    Height = 589
+    Height = 571
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 6
@@ -82,7 +91,7 @@ object FormChartSeries: TFormChartSeries
       Left = 0
       Top = 0
       Width = 898
-      Height = 589
+      Height = 571
       Legend.Alignment = laBottom
       Legend.CheckBoxes = True
       Legend.Font.Charset = RUSSIAN_CHARSET
@@ -108,6 +117,7 @@ object FormChartSeries: TFormChartSeries
         'TChart')
       Title.Visible = False
       Title.VertMargin = 0
+      OnClickLegend = Chart1ClickLegend
       RightAxis.Visible = False
       TopAxis.Visible = False
       View3D = False
@@ -116,6 +126,9 @@ object FormChartSeries: TFormChartSeries
       BevelOuter = bvNone
       Color = clWindow
       TabOrder = 0
+      OnMouseMove = Chart1MouseMove
+      ExplicitLeft = -6
+      ExplicitTop = -6
       DefaultCanvas = 'TGDIPlusCanvas'
       ColorPaletteIndex = 13
     end
@@ -130,7 +143,7 @@ object FormChartSeries: TFormChartSeries
     Left = 480
     Top = 178
     Bitmap = {
-      494C010101009C00E40232003200FFFFFF002110FFFFFFFFFFFFFFFF424D3600
+      494C010101009C00F00232003200FFFFFF002110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000C8000000320000000100200000000000409C
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

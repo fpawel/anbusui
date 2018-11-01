@@ -43,17 +43,15 @@ object AnbusMainForm: TAnbusMainForm
     TabWidth = 50
     OnChange = PageControlMainChange
     OnDrawTab = PageControlMainDrawTab
-    ExplicitHeight = 489
     object TabSheetVars: TTabSheet
       Caption = #1054#1087#1088#1086#1089
       ImageIndex = 2
-      ExplicitHeight = 481
       object Splitter1: TSplitter
         Left = 542
         Top = 0
         Width = 5
         Height = 357
-        Color = clMoneyGreen
+        Color = clGradientActiveCaption
         ParentColor = False
         ExplicitLeft = 558
         ExplicitTop = -2
@@ -67,7 +65,6 @@ object AnbusMainForm: TAnbusMainForm
         Align = alLeft
         BevelOuter = bvNone
         TabOrder = 0
-        ExplicitHeight = 481
         object Panel1: TPanel
           Left = 0
           Top = 0
@@ -149,18 +146,23 @@ object AnbusMainForm: TAnbusMainForm
         Align = alLeft
         BevelOuter = bvNone
         TabOrder = 1
-        ExplicitHeight = 481
       end
     end
     object TabSheetSettings: TTabSheet
       Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
       ImageIndex = 4
-      ExplicitHeight = 481
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
     end
     object TabSheetArchive: TTabSheet
       Caption = #1040#1088#1093#1080#1074
       ImageIndex = 1
-      ExplicitHeight = 481
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
     end
   end
   object Panel14: TPanel
@@ -171,7 +173,6 @@ object AnbusMainForm: TAnbusMainForm
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitHeight = 489
   end
   object Panel4: TPanel
     Left = 1054
@@ -181,7 +182,6 @@ object AnbusMainForm: TAnbusMainForm
     Align = alRight
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitHeight = 489
   end
   object Panel2: TPanel
     Left = 0
@@ -203,8 +203,6 @@ object AnbusMainForm: TAnbusMainForm
     Constraints.MinHeight = 150
     ParentBackground = False
     TabOrder = 4
-    ExplicitTop = 331
-    ExplicitWidth = 537
     object RichEdit1: TRichEdit
       Left = 0
       Top = 58
@@ -222,7 +220,6 @@ object AnbusMainForm: TAnbusMainForm
       ScrollBars = ssVertical
       TabOrder = 0
       Zoom = 100
-      ExplicitWidth = 537
     end
     object PanelStatus: TPanel
       Left = 0
@@ -242,7 +239,6 @@ object AnbusMainForm: TAnbusMainForm
       ParentFont = False
       TabOrder = 1
       OnDblClick = ToolButtonConsoleHideClick
-      ExplicitTop = 1
       object ToolBar4: TToolBar
         Left = 1026
         Top = 0
@@ -255,7 +251,6 @@ object AnbusMainForm: TAnbusMainForm
         EdgeOuter = esNone
         Images = ImageList3
         TabOrder = 0
-        ExplicitLeft = 504
         object ToolButtonConsoleHide: TToolButton
           Left = 0
           Top = 0
@@ -273,7 +268,6 @@ object AnbusMainForm: TAnbusMainForm
       Align = alTop
       TabOrder = 2
       OnKeyDown = ComboBox1KeyDown
-      ExplicitWidth = 537
     end
   end
   object ImageList4: TImageList
@@ -286,7 +280,7 @@ object AnbusMainForm: TAnbusMainForm
     Left = 768
     Top = 34
     Bitmap = {
-      494C0101020024039C0314001400FFFFFF002110FFFFFFFFFFFFFFFF424D3600
+      494C010102002403A40314001400FFFFFF002110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000500000001400000001002000000000000019
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -538,7 +532,7 @@ object AnbusMainForm: TAnbusMainForm
     Left = 224
     Top = 218
     Bitmap = {
-      494C01010200D401F40219001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
+      494C01010200D401FC0219001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000640000001900000001002000000000001027
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -880,7 +874,7 @@ object AnbusMainForm: TAnbusMainForm
     Left = 264
     Top = 146
     Bitmap = {
-      494C01010400D401100319001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
+      494C01010400D401180319001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
       000000000000360000002800000064000000320000000100200000000000204E
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
