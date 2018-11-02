@@ -23,6 +23,9 @@ type
         FColumn: integer; // The column of the node being edited.
         FConfigData: PConfigData;
         procedure DoPropertyValueChanged;
+
+        procedure EditOnChange(Sender:TObject);
+
     protected
         procedure EditKeyDown(Sender: TObject; var Key: Word;
           Shift: TShiftState);
@@ -74,6 +77,11 @@ begin
 end;
 
 // ----------------------------------------------------------------------------------------------------------------------
+
+procedure TPropertyEditLink.EditOnChange(Sender:TObject);
+begin
+    DoPropertyValueChanged;
+end;
 
 procedure TPropertyEditLink.EditKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
@@ -225,6 +233,7 @@ begin
         FEdit := TComboBox.Create(nil);
         with FEdit as TComboBox do
         begin
+
             Visible := False;
             Parent := Tree;
             Text := FConfigData.Prop.FValue;
@@ -238,10 +247,9 @@ begin
             OnKeyDown := EditKeyDown;
             OnKeyUp := EditKeyUp;
             style := csDropDown;
-
-
             ItemHeight := 22;
             ItemIndex := Items.IndexOf(FConfigData.Prop.FValue);
+            OnChange := EditOnChange;
         end;
     end
 
@@ -250,11 +258,13 @@ begin
         FEdit := TEdit.Create(nil);
         with FEdit as TEdit do
         begin
+
             Visible := False;
             Parent := Tree;
             Text := FConfigData.Prop.FValue;
             OnKeyDown := EditKeyDown;
             OnKeyUp := EditKeyUp;
+
         end;
     end
 
@@ -263,11 +273,13 @@ begin
         FEdit := TEdit.Create(nil);
         with FEdit as TEdit do
         begin
+
             Visible := False;
             Parent := Tree;
             Text := FConfigData.Prop.FValue;
             OnKeyDown := EditKeyDown;
             OnKeyUp := EditKeyUp;
+
         end;
     end
     else if FConfigData.Prop.ValueType = VtFloat then
@@ -275,11 +287,13 @@ begin
         FEdit := TEdit.Create(nil);
         with FEdit as TEdit do
         begin
+
             Visible := False;
             Parent := Tree;
             Text := FConfigData.Prop.FValue;
             OnKeyDown := EditKeyDown;
             OnKeyUp := EditKeyUp;
+
         end;
     end
 
@@ -288,6 +302,7 @@ begin
         FEdit := TCheckBox.Create(nil);
         with FEdit as TCheckBox do
         begin
+
             Visible := False;
             Parent := Tree;
             if FConfigData.Prop.FValue = '0' then
@@ -300,6 +315,7 @@ begin
 
             FConfigData.Prop.SetStr(FConfigData.Prop.FValue);
             DoPropertyValueChanged;
+            OnClick := EditOnChange;
 
         end;
     end

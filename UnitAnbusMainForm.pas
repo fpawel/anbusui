@@ -80,6 +80,7 @@ type
         procedure ToolButton4Click(Sender: TObject);
         procedure ToolButton5Click(Sender: TObject);
         procedure ToolButton6Click(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
     private
         { Private declarations }
         FhWndTip: THandle;
@@ -121,6 +122,11 @@ const
 function CommandsFileName: string;
 begin
     result := ExtractFilePath(ParamStr(0)) + '\commands.txt'
+end;
+
+procedure TAnbusMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+    //SendMessage(FindWindow('AnbusServerAppWindow',nil), WM_CLOSE, 0, 0);
 end;
 
 procedure TAnbusMainForm.FormCreate(Sender: TObject);
@@ -236,6 +242,11 @@ end;
 procedure TAnbusMainForm.FormShow(Sender: TObject);
 begin
     OnShow := nil;
+
+    if ParamStr(1) = '-wait-server' then
+    while not IsWindow( FindWindow('AnbusServerAppWindow',nil) ) do
+        Application.ProcessMessages;
+
     with PropertiesForm do
     begin
         Font.Assign(Self.Font);

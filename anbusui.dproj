@@ -3,7 +3,7 @@
         <ProjectGuid>{A0AD74F2-3B5F-450F-B421-6A488A75FAC5}</ProjectGuid>
         <ProjectVersion>18.2</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
-        <MainSource>anbasui.dpr</MainSource>
+        <MainSource>anbusui.dpr</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
@@ -46,7 +46,7 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
-        <SanitizedProjectName>anbasui</SanitizedProjectName>
+        <SanitizedProjectName>anbusui</SanitizedProjectName>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;$(DCC_Namespace)</DCC_Namespace>
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
         <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
@@ -80,6 +80,7 @@
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <DCC_ExeOutput>$(HOMEDRIVE)$(HOMEPATH)\.anbus</DCC_ExeOutput>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
@@ -102,7 +103,6 @@
         </DelphiCompile>
         <DCCReference Include="UnitAnbusMainForm.pas">
             <Form>AnbusMainForm</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="utils\findproc.pas"/>
         <DCCReference Include="runhostapp.pas"/>
@@ -114,15 +114,12 @@
         <DCCReference Include="models\model_network.pas"/>
         <DCCReference Include="UnitFormReadVars.pas">
             <Form>FormReadVars</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="UnitFormPopup.pas">
             <Form>FormPopup</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="UnitServerApp.pas">
             <Form>ServerApp</Form>
-            <FormType>dfm</FormType>
             <DesignClass>TDataModule</DesignClass>
         </DCCReference>
         <DCCReference Include="messages\serverapp_msg.pas"/>
@@ -130,7 +127,6 @@
         <DCCReference Include="utils\richeditutils.pas"/>
         <DCCReference Include="UnitFormChartSeries.pas">
             <Form>FormChartSeries</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="utils\jsonrpc\ujsonrpc.pas"/>
         <DCCReference Include="utils\superobject\superdate.pas"/>
@@ -141,12 +137,10 @@
         <DCCReference Include="utils\pipe.pas"/>
         <DCCReference Include="PropertiesFormUnit.pas">
             <Form>PropertiesForm</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="PropertyValueEditors.pas"/>
         <DCCReference Include="UnitFormBuckets.pas">
             <Form>FormBuckets</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
@@ -166,7 +160,7 @@
         <BorlandProject>
             <Delphi.Personality>
                 <Source>
-                    <Source Name="MainSource">anbasui.dpr</Source>
+                    <Source Name="MainSource">anbusui.dpr</Source>
                 </Source>
                 <Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclFireDACEnt240.bpl">Embarcadero FireDAC C\S Components</Excluded_Packages>
@@ -176,33 +170,18 @@
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="3">
-                <DeployFile LocalName="Win32\Debug\anbasui.exe" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="C:\Users\fpawel\.anbus\anbusui.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
-                        <RemoteName>anbasui.exe</RemoteName>
+                        <RemoteName>anbusui.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployClass Name="DependencyModule">
-                    <Platform Name="Win32">
-                        <Operation>0</Operation>
-                        <Extensions>.dll;.bpl</Extensions>
-                    </Platform>
+                <DeployClass Name="ProjectiOSDeviceResourceRules">
                     <Platform Name="iOSDevice64">
                         <Operation>1</Operation>
-                        <Extensions>.dylib</Extensions>
-                    </Platform>
-                    <Platform Name="OSX32">
-                        <RemoteDir>Contents\MacOS</RemoteDir>
-                        <Operation>1</Operation>
-                        <Extensions>.dylib</Extensions>
                     </Platform>
                     <Platform Name="iOSDevice32">
                         <Operation>1</Operation>
-                        <Extensions>.dylib</Extensions>
-                    </Platform>
-                    <Platform Name="iOSSimulator">
-                        <Operation>1</Operation>
-                        <Extensions>.dylib</Extensions>
                     </Platform>
                 </DeployClass>
                 <DeployClass Name="ProjectOSXResource">
@@ -581,12 +560,27 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <DeployClass Name="ProjectiOSDeviceResourceRules">
+                <DeployClass Name="DependencyModule">
+                    <Platform Name="Win32">
+                        <Operation>0</Operation>
+                        <Extensions>.dll;.bpl</Extensions>
+                    </Platform>
                     <Platform Name="iOSDevice64">
                         <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
+                    </Platform>
+                    <Platform Name="OSX32">
+                        <RemoteDir>Contents\MacOS</RemoteDir>
+                        <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
                     </Platform>
                     <Platform Name="iOSDevice32">
                         <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
                     </Platform>
                 </DeployClass>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>

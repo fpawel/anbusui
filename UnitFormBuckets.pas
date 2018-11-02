@@ -123,7 +123,15 @@ begin
 
         for i in ServerApp.MustGetResult('BucketsSvc.Vars',
           SO(Format('[%d]', [TreeData[Node].Value]))) do
-            AFormChartSeries.AddVar(i.AsInteger);
+          begin
+            AFormChartSeries.ListBox1.Items.Add(inttostr(i.AsInteger));
+          end;
+
+        for i in ServerApp.MustGetResult('BucketsSvc.Addresses',
+          SO(Format('[%d]', [TreeData[Node].Value]))) do
+          begin
+            AFormChartSeries.ListBox2.Items.Add(inttostr(i.AsInteger));
+          end;
 
         for i in ServerApp.MustGetResult('BucketsSvc.Records',
           SO(Format('[%d]', [TreeData[Node].Value]))) do
