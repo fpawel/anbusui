@@ -299,13 +299,15 @@ procedure TPropertiesForm.VST3DrawText(Sender: TBaseVirtualTree;
   const Text: string; const CellRect: TRect; var DefaultDraw: Boolean);
 var
     R: TRect;
+    b:boolean;
 begin
     if (Column = 1) and (Prop[node].ValueType = VtBool) then
     begin
         R := CellRect;
         R.Left := R.Left - 9;
         R.Right := R.Right - 9;
-        DrawCheckbox(Sender, TargetCanvas, R, Prop[node].FValue <> '0', '');
+        if TryStrToBool(Prop[node].FValue,b) then
+            DrawCheckbox(Sender, TargetCanvas, R, b, '');
         DefaultDraw := false;
     end;
 

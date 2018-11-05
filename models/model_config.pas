@@ -107,7 +107,7 @@ procedure TConfigProperty.SetStr(str: string);
 var
     v: double;
     i, vInt: integer;
-    ok: boolean;
+    ok, v_bool: boolean;
 begin
     FError := '';
     str := str_validate_decimal_separator(str).Trim;
@@ -136,7 +136,7 @@ begin
     end;
 
     ok := true;
-    if (ValueType = VtInt) or (ValueType = VtBaud) or (ValueType = VtBool) then
+    if (ValueType = VtInt) or (ValueType = VtBaud)  then
     begin
         ok := TryStrToInt(str, vInt);
         v := vInt;
@@ -148,6 +148,12 @@ begin
         ok := TryStrToFloat(str, v);
         if not ok then
             FError := 'не правильный синтаксис числа c плавающей точкой';
+    end else if ValueType = VtBool then
+    begin
+        ok := TryStrToBool(str, v_bool);
+        if not ok then
+            FError := 'не правильный синтаксис логического значения';
+
     end;
 
     if ok then

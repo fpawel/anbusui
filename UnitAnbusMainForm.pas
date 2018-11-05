@@ -126,7 +126,8 @@ end;
 
 procedure TAnbusMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-    //SendMessage(FindWindow('AnbusServerAppWindow',nil), WM_CLOSE, 0, 0);
+    if (ParamCount > 1)and (ParamStr(1) = '-must-close-server') then
+        SendMessage(FindWindow('AnbusServerAppWindow',nil), WM_CLOSE, 0, 0);
 end;
 
 procedure TAnbusMainForm.FormCreate(Sender: TObject);
@@ -242,10 +243,6 @@ end;
 procedure TAnbusMainForm.FormShow(Sender: TObject);
 begin
     OnShow := nil;
-
-    if ParamStr(1) = '-wait-server' then
-    while not IsWindow( FindWindow('AnbusServerAppWindow',nil) ) do
-        Application.ProcessMessages;
 
     with PropertiesForm do
     begin
