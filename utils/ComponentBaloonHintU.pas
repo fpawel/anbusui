@@ -44,7 +44,7 @@ begin
         ToolInfo.cbSize := SizeOf(TToolInfo);
         ToolInfo.uFlags := TTF_CENTERTIP or TTF_TRANSPARENT or TTF_SUBCLASS;
         ToolInfo.hWnd := Handle;
-        ToolInfo.lpszText := StringToWideChar(Text, BodyText, 2 * 356);
+        ToolInfo.lpszText := StringToWideChar(Text, BodyText, 2 * 256);
         SetWindowPos(hWndTip, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE or
           SWP_NOMOVE or SWP_NOSIZE);
         ToolInfo.Rect := GetClientRect;

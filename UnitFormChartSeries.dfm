@@ -203,7 +203,6 @@ object FormChartSeries: TFormChartSeries
       BevelOuter = bvNone
       Color = clWindow
       TabOrder = 0
-      OnMouseMove = Chart1MouseMove
       DefaultCanvas = 'TGDIPlusCanvas'
       ColorPaletteIndex = 13
     end
@@ -225,9 +224,9 @@ object FormChartSeries: TFormChartSeries
       ParentFont = False
       TabOrder = 1
       object ToolBar1: TToolBar
-        Left = 768
+        Left = 800
         Top = 0
-        Width = 98
+        Width = 66
         Align = alRight
         ButtonHeight = 31
         ButtonWidth = 32
@@ -258,16 +257,6 @@ object FormChartSeries: TFormChartSeries
           Style = tbsCheck
           OnClick = ToolButton3Click
         end
-        object ToolButton4: TToolButton
-          Left = 64
-          Top = 0
-          Hint = #1059#1076#1072#1083#1080#1090#1100' '#1090#1086#1095#1082#1080
-          Caption = 'ToolButton4'
-          ImageIndex = 1
-          ParentShowHint = False
-          ShowHint = True
-          OnClick = ToolButton4Click
-        end
       end
       object Panel11: TPanel
         Left = 0
@@ -278,6 +267,7 @@ object FormChartSeries: TFormChartSeries
         BevelOuter = bvNone
         ParentColor = True
         TabOrder = 1
+        ExplicitWidth = 713
         object Panel12: TPanel
           Left = 0
           Top = 0
@@ -363,6 +353,29 @@ object FormChartSeries: TFormChartSeries
           end
         end
       end
+      object ToolBar2: TToolBar
+        Left = 768
+        Top = 0
+        Width = 32
+        Align = alRight
+        ButtonHeight = 31
+        ButtonWidth = 32
+        Caption = 'ToolBar1'
+        EdgeInner = esNone
+        EdgeOuter = esNone
+        Images = ImageList1
+        TabOrder = 2
+        object ToolButton6: TToolButton
+          Left = 0
+          Top = 0
+          Hint = #1059#1076#1072#1083#1080#1090#1100' '#1090#1086#1095#1082#1080
+          Caption = 'ToolButton4'
+          ImageIndex = 1
+          ParentShowHint = False
+          ShowHint = True
+          OnClick = ToolButton4Click
+        end
+      end
     end
   end
   object ImageList1: TImageList
@@ -375,7 +388,7 @@ object FormChartSeries: TFormChartSeries
     Left = 264
     Top = 146
     Bitmap = {
-      494C010103002403400319001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
+      494C010103002403440319001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000640000001900000001002000000000001027
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

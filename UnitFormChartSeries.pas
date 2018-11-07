@@ -30,7 +30,6 @@ type
         Panel5: TPanel;
         ToolBar1: TToolBar;
         ToolButton3: TToolButton;
-        ToolButton4: TToolButton;
         Panel6: TPanel;
         Splitter1: TSplitter;
         Panel9: TPanel;
@@ -42,13 +41,13 @@ type
         GridPanel1: TGridPanel;
         Memo1: TMemo;
         Memo2: TMemo;
+        ToolBar2: TToolBar;
+        ToolButton6: TToolButton;
         procedure FormCreate(Sender: TObject);
         procedure ListBox1Click(Sender: TObject);
         procedure Chart1AfterDraw(Sender: TObject);
         procedure Chart1ClickLegend(Sender: TCustomChart; Button: TMouseButton;
           Shift: TShiftState; X, Y: integer);
-        procedure Chart1MouseMove(Sender: TObject; Shift: TShiftState;
-          X, Y: integer);
         procedure ToolButton3Click(Sender: TObject);
         procedure ToolButton1Click(Sender: TObject);
         procedure Chart1UndoZoom(Sender: TObject);
@@ -59,10 +58,7 @@ type
         { Private declarations }
         FSeries: TDictionary<ProductVar, TFastLineSeries>;
         FChart1OriginalWndMethod: TWndMethod;
-        FhWndTip:THandle;
-
-        procedure WMWindowPosChanged(var AMessage: TMessage);
-          message WM_WINDOWPOSCHANGED;
+        FhWndTip: THandle;
 
         procedure Chart1WndMethod(var Message: TMessage);
         procedure SetActiveSeries(ser: TFastLineSeries);
@@ -90,6 +86,8 @@ type
         procedure ChangeAxisOrder(c: TWinControl; WheelDelta: integer);
 
         function DeleteRequest: TArray<string>;
+
+        procedure CloseHint;
     end;
 
 var
@@ -100,7 +98,7 @@ implementation
 {$R *.dfm}
 
 uses stringutils, dateutils, StrUtils, math, System.Types, vclutils,
-    UnitServerApp, UnitAnbusMainForm;
+    UnitServerApp, UnitAnbusMainForm, ComponentBaloonHintU;
 
 function pow2(X: Extended): Extended;
 begin
@@ -207,13 +205,6 @@ begin
     Chart1.WindowProc := Chart1WndMethod;
 
 end;
-
-procedure TFormChartSeries.WMWindowPosChanged(var AMessage: TMessage);
-begin
-    CloseWindow(FhWndTip);
-    inherited;
-end;
-
 
 procedure TFormChartSeries.ListBox1Click(Sender: TObject);
 var
@@ -388,13 +379,6 @@ begin
 
 end;
 
-procedure TFormChartSeries.Chart1MouseMove(Sender: TObject; Shift: TShiftState;
-X, Y: integer);
-
-begin
-    //
-end;
-
 procedure TFormChartSeries.Chart1UndoZoom(Sender: TObject);
 begin
     Chart1.BottomAxis.Automatic := true;
@@ -463,7 +447,6 @@ begin
     Chart1.Repaint;
 end;
 
-
 procedure TFormChartSeries.ToolButton4Click(Sender: TObject);
 var
     s: string;
@@ -476,23 +459,24 @@ begin
     tot_chart := 0;
     for i in FSeries do
     begin
-        if not i.value.Active and Assigned(i.value.ParentChart) then
-            Continue;
-        Count := i.value.Count;
-        n := 0;
-        while n < Count do
+        if i.value.Active and Assigned(i.value.ParentChart) then
         begin
-            if (i.value.XValues[n] >= Chart1.BottomAxis.Minimum) AND
-              (i.value.XValues[n] <= Chart1.BottomAxis.Maximum) AND
-              (i.value.YValues[n] >= Chart1.LeftAxis.Minimum) AND
-              (i.value.YValues[n] <= Chart1.LeftAxis.Maximum) then
+            Count := i.value.Count;
+            n := 0;
+            while n < Count do
             begin
-                i.value.Delete(n);
-                Count := Count - 1;
-                tot_chart := tot_chart + 1;
-            end
-            else
-                n := n + 1;
+                if (i.value.XValues[n] >= Chart1.BottomAxis.Minimum) AND
+                  (i.value.XValues[n] <= Chart1.BottomAxis.Maximum) AND
+                  (i.value.YValues[n] >= Chart1.LeftAxis.Minimum) AND
+                  (i.value.YValues[n] <= Chart1.LeftAxis.Maximum) then
+                begin
+                    i.value.Delete(n);
+                    Count := Count - 1;
+                    tot_chart := tot_chart + 1;
+                end
+                else
+                    n := n + 1;
+            end;
         end;
     end;
 
@@ -504,11 +488,11 @@ begin
         tot_db := tot_db + res.AsInteger;
 
     end;
-    FhWndTip := ShowBalloonTip(ToolBar1.Handle, 1, clDefault, clRed,
+    CloseWindow(FhWndTip);
+    FhWndTip := ToolBar2.ShowBalloonTip( TIconKind.Info,
       'Удаление точек',
-      PChar
-      (Format('%d сохранённых точек удалено'#13'%d точек графика удалено',
-      [tot_db, tot_chart])));
+      Format('%d сохранённых точек удалено'#13'%d точек графика удалено',
+      [tot_db, tot_chart]));
 
 end;
 
@@ -569,27 +553,26 @@ begin
     FChart1OriginalWndMethod(Message);
 end;
 
+procedure TFormChartSeries.CloseHint;
+begin
+    CloseWindow(FhWndTip);
+end;
+
 procedure TFormChartSeries.SetAddrVarSeries(Addr, var_id: integer;
 visible: boolean);
 var
-    k: ProductVar;
     ser: TFastLineSeries;
 begin
-    k.Addr := Addr;
-    k.VarID := var_id;
-    if FSeries.ContainsKey(k) then
+    ser := SeriesOf(Addr, var_id);
+    if visible then
     begin
-        ser := FSeries[k];
-        if visible then
-        begin
-            AddStrIntListBox(ListBox1, var_id);
-            AddStrIntListBox(ListBox2, Addr);
-            ser.ParentChart := Chart1;
-            ser.Active := true;
-        end
-        else
-            ser.ParentChart := nil;
-    end;
+        AddStrIntListBox(ListBox1, var_id);
+        AddStrIntListBox(ListBox2, Addr);
+        ser.ParentChart := Chart1;
+        ser.Active := true;
+    end
+    else
+        ser.ParentChart := nil;
 end;
 
 function TFormChartSeries.ToggleSeries(Addr, var_id: integer): boolean;

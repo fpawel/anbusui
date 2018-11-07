@@ -8,7 +8,7 @@ uses
     Vcl.Controls, Vcl.Forms, Vcl.Dialogs, VirtualTrees, System.ImageList,
     Vcl.ImgList, Vcl.ExtCtrls, Vcl.StdCtrls, VclTee.TeeGDIPlus, VclTee.TeEngine,
     VclTee.TeeProcs, VclTee.Chart,
-    VclTee.Series;
+    UnitFormChartSeries, VclTee.Series;
 
 type
 
@@ -38,10 +38,11 @@ type
         procedure TreeView1Expanding(Sender: TBaseVirtualTree;
           Node: PVirtualNode; var Allowed: Boolean);
         procedure TreeView1Change(Sender: TBaseVirtualTree; Node: PVirtualNode);
-    procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
-      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+        procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
+          WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     private
         { Private declarations }
+
         function GetTreeData(Node: PVirtualNode): PTreeData;
         procedure CreateYearsNodes;
         procedure CreateMonthsNodes(ParentNode: PVirtualNode);
@@ -51,6 +52,7 @@ type
         property TreeData[Node: PVirtualNode]: PTreeData read GetTreeData;
 
     public
+        FFormChartSeries: TFormChartSeries;
         { Public declarations }
         procedure ValidateData;
 
@@ -65,8 +67,8 @@ type
     TSeriesRecord = class
         FStoredAt: TDateTime;
         FValue: double;
-        FVar: integer;
-        FAddr: integer;
+        FVar: Integer;
+        FAddr: Integer;
     end;
 
 var
@@ -77,18 +79,14 @@ implementation
 {$R *.dfm}
 
 uses superobject, stringutils, rest.json,
-    dateutils, UnitServerApp, UnitFormChartSeries, stringgridutils, vclutils;
-
-var
-    AFormChartSeries: TFormChartSeries;
-    DateTimeFmtStngs: TFormatSettings;
+    dateutils, UnitServerApp, stringgridutils, vclutils;
 
 procedure TFormBuckets.FormCreate(Sender: TObject);
 begin
     TreeView1.NodeDataSize := SizeOf(RTreeData);
-    AFormChartSeries := TFormChartSeries.Create(self);
+    FFormChartSeries := TFormChartSeries.Create(self);
 
-    with AFormChartSeries do
+    with FFormChartSeries do
     begin
         Parent := self;
         Align := alClient;
@@ -98,21 +96,12 @@ begin
         Visible := false;
     end;
 
-    DateTimeFmtStngs := TFormatSettings.Create(GetThreadLocale);
-    with DateTimeFmtStngs do
-    begin
-        DateSeparator := '.';
-        ShortDateFormat := 'dd/MM/yyyy';
-        TimeSeparator := ':';
-        LongTimeFormat := 'hh:mm:ss';
-    end;
-
 end;
 
 procedure TFormBuckets.FormMouseWheel(Sender: TObject; Shift: TShiftState;
   WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
 begin
-    AFormChartSeries.ChangeAxisOrder(GetVCLControlAtPos(self, MousePos),
+    FFormChartSeries.ChangeAxisOrder(GetVCLControlAtPos(self, MousePos),
       WheelDelta);
 end;
 
@@ -128,20 +117,20 @@ begin
 
     if Assigned(TreeData[Node]) AND (TreeData[Node].NodeKind = trdBucket) then
     begin
-        AFormChartSeries.NewChart;
-        AFormChartSeries.FBucketID := TreeData[Node].Value;
+        FFormChartSeries.NewChart;
+        FFormChartSeries.FBucketID := TreeData[Node].Value;
 
         for i in ServerApp.MustGetResult('BucketsSvc.Vars',
           SO(Format('[%d]', [TreeData[Node].Value]))) do
-          begin
-            AFormChartSeries.ListBox1.Items.Add(inttostr(i.AsInteger));
-          end;
+        begin
+            FFormChartSeries.ListBox1.Items.Add(inttostr(i.AsInteger));
+        end;
 
         for i in ServerApp.MustGetResult('BucketsSvc.Addresses',
           SO(Format('[%d]', [TreeData[Node].Value]))) do
-          begin
-            AFormChartSeries.ListBox2.Items.Add(inttostr(i.AsInteger));
-          end;
+        begin
+            FFormChartSeries.ListBox2.Items.Add(inttostr(i.AsInteger));
+        end;
 
         for i in ServerApp.MustGetResult('BucketsSvc.Records',
           SO(Format('[%d]', [TreeData[Node].Value]))) do
@@ -150,17 +139,17 @@ begin
             t := EncodeDateTime(j[2].AsInteger, j[3].AsInteger, j[4].AsInteger,
               j[5].AsInteger, j[6].AsInteger, j[7].AsInteger, j[8].AsInteger);
 
-            AFormChartSeries.SeriesOf(j[0].AsInteger, j[1].AsInteger)
+            FFormChartSeries.SeriesOf(j[0].AsInteger, j[1].AsInteger)
               .AddXY(t, j[9].AsDouble);;;
 
         end;
 
-        AFormChartSeries.Visible := true;
+        FFormChartSeries.Visible := true;
 
     end
     else
     begin
-        AFormChartSeries.Visible := false;
+        FFormChartSeries.Visible := false;
     end;
 
 end;
@@ -204,7 +193,7 @@ var
 begin
     if (Column = 0) AND (Kind in [ikNormal, ikSelected]) then
     begin
-        ImageIndex := integer(TreeData[Node].NodeKind);
+        ImageIndex := Integer(TreeData[Node].NodeKind);
     end;
 end;
 

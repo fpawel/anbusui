@@ -98,6 +98,8 @@ type
         procedure HandleCopydata(var Message: TMessage); message WM_COPYDATA;
         procedure WMWindowPosChanged(var AMessage: TMessage);
           message WM_WINDOWPOSCHANGED;
+        procedure WMEnterSizeMove(var Msg: TMessage); message WM_ENTERSIZEMOVE;
+
         procedure WMActivateApp(var AMessage: TMessage); message WM_ACTIVATEAPP;
 
     public
@@ -187,7 +189,7 @@ begin
                         if (Length(words) > 1) AND (words[0] = 'call') then
                         begin
                             if Length(words) = 2 then
-                                r := ServerApp.GetResponse(words[1], SO('[]'))
+                                r := ServerApp.GetResponse(words[1], SO('{}'))
                             else
                             begin
                                 s := words[2];
@@ -203,9 +205,10 @@ begin
                         t := r.GetMessageType;
                         if t = jotError then
                         begin
-                            AddConsoleText(n_err,
-                              r.GetMessagePayload.AsJsonObject['error']
-                              ['message'].AsString);
+                            CloseWindow(FhWndTip);
+                            FhWndTip := ComboBox1.ShowBalloonTip(TIconKind.Error,
+                              'Ошибка ввода', r.GetMessagePayload.AsJsonObject
+                              ['error']['message'].AsString);
                         end;
 
                         if words[0] = 'call' then
@@ -335,14 +338,34 @@ begin
         RichEdit_PopupMenu(RichEdit1);
 end;
 
-procedure TAnbusMainForm.WMActivateApp(var AMessage: TMessage);
+procedure TAnbusMainForm.WMEnterSizeMove(var Msg: TMessage);
 begin
+    if Assigned(FormChartSeries) then
+        FormChartSeries.CloseHint;
+
+    if Assigned(FormBuckets) then
+        FormBuckets.FFormChartSeries.CloseHint;
+
     CloseWindow(FhWndTip);
     inherited;
 end;
 
 procedure TAnbusMainForm.WMWindowPosChanged(var AMessage: TMessage);
 begin
+    if Assigned(FormChartSeries) then
+        FormChartSeries.CloseHint;
+
+    if Assigned(FormBuckets) then
+        FormBuckets.FFormChartSeries.CloseHint;
+
+    CloseWindow(FhWndTip);
+    inherited;
+end;
+
+procedure TAnbusMainForm.WMActivateApp(var AMessage: TMessage);
+begin
+    if Assigned(FormChartSeries) then
+        FormChartSeries.CloseHint;
     CloseWindow(FhWndTip);
     inherited;
 end;
