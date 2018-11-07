@@ -2,10 +2,11 @@
 
 interface
 
-uses Vcl.Graphics, Winapi.Windows;
+uses Vcl.Graphics, Winapi.Windows, system.StrUtils;
 
 function str_validate_decimal_separator(s: string): string;
 function str_to_float(s: string): Double;
+function float_to_str(v: Double ): string;
 function str_replace_unicode_chars(s: string): string;
 function inttostr2(n: integer): string;
 function inttostr3(n: integer): string;
@@ -15,9 +16,20 @@ function StrFromCopydata(cd: PCOPYDATASTRUCT): string;
 
 function month_name(month_number: integer): string;
 
+function MyBoolToStr(v: boolean): string;
+function MyStrToBool(v: string): boolean;
+
+
 implementation
 
 uses System.SysUtils, System.DateUtils;
+
+function float_to_str(v: Double ): string;
+begin
+    result := StringReplace(FloatToStr(v), ',', '.', [rfReplaceAll]);
+end;
+
+
 
 function month_name(month_number: integer): string;
 begin
@@ -90,6 +102,22 @@ begin
         Result := s1;
     end;
     Result := Result + '...';
+end;
+
+function MyBoolToStr(v: boolean): string;
+begin
+    if v then
+        exit('true');
+    exit('false');
+end;
+
+function MyStrToBool(v: string): boolean;
+begin
+    if LowerCase(v) = 'true' then
+        exit(true);
+    if LowerCase(v) = 'false' then
+        exit(false);
+    raise Exception.Create('not bool string: ' + v);
 end;
 
 end.

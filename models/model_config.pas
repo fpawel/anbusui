@@ -4,19 +4,18 @@ interface
 
 type
 
-
     TPropertyValueType = (VtInt, VtFloat, VtString, VtComportName,
       VtBaud, VtBool);
 
     TExtremum = class
-        FValue : double;
+        FValue: double;
     end;
-
-
 
     TConfigProperty = class
     private
         function GetPropertyValueType: TPropertyValueType;
+        function GetBool: boolean;
+        procedure SetBool(v: boolean);
     public
         FHint: string;
         FValue: string;
@@ -28,10 +27,12 @@ type
         FValueType: integer;
         FList: TArray<string>;
         procedure SetStr(str: string);
-        function GetHasError:boolean;
+        function GetHasError: boolean;
 
-        property ValueType : TPropertyValueType read GetPropertyValueType;
-        property HasError : boolean read GetHasError;
+        property ValueType: TPropertyValueType read GetPropertyValueType;
+        property HasError: boolean read GetHasError;
+        property Bool: boolean read GetBool write SetBool;
+
     end;
 
     TConfigSection = class
@@ -44,16 +45,17 @@ type
     end;
 
     RConfigData = record
-       Prop : TConfigProperty;
-       Sect : TConfigSection;
-       function GetHasError:boolean;
-       property HasError : boolean read GetHasError;
+        Prop: TConfigProperty;
+        Sect: TConfigSection;
+        function GetHasError: boolean;
+        property HasError: boolean read GetHasError;
     end;
+
     PConfigData = ^RConfigData;
 
     TConfig = class
     public
-        FSections : TArray<TConfigSection>;
+        FSections: TArray<TConfigSection>;
     end;
 
     TChangedPropertyValue = class
@@ -61,19 +63,41 @@ type
         FValue: string;
         FName: string;
         FSection: string;
-        constructor Create(p:PConfigData);
+        constructor Create(p: PConfigData);
     end;
 
 implementation
 
 uses stringutils, sysutils;
 
-function TConfigProperty.GetHasError:boolean;
+function TConfigProperty.GetBool: boolean;
+begin
+    if FValueType <> integer(VtBool) then
+        raise Exception.Create('not bool: ' + IntToStr(FValueType));
+    if LowerCase(FValue) = 'true' then
+        Exit(true);
+    if LowerCase(FValue) = 'false' then
+        Exit(false);
+    raise Exception.Create('not bool string: ' + FValue);
+end;
+
+procedure TConfigProperty.SetBool(v: boolean);
+begin
+    if self.FValueType <>  integer(VtBool) then
+        raise Exception.Create('not bool: ' + IntToStr(FValueType));
+    if v then
+        FValue := 'true'
+    else
+        FValue := 'false';
+    FError := '';
+end;
+
+function TConfigProperty.GetHasError: boolean;
 begin
     result := FError <> '';
 end;
 
-constructor TChangedPropertyValue.Create(p:PConfigData);
+constructor TChangedPropertyValue.Create(p: PConfigData);
 begin
     inherited Create;
     FValue := p.Prop.FValue;
@@ -81,11 +105,11 @@ begin
     FSection := p.Sect.FName;
 end;
 
-function RConfigData.GetHasError:boolean;
+function RConfigData.GetHasError: boolean;
 begin
-    if not Assigned(prop) then
-        exit(sect.HasError) ;
-    exit (prop.HasError);
+    if not Assigned(Prop) then
+        Exit(Sect.HasError);
+    Exit(Prop.HasError);
 end;
 
 function TConfigSection.HasError: boolean;
@@ -94,13 +118,13 @@ var
 begin
     for i := 0 to length(self.FProperties) - 1 do
         if FProperties[i].HasError then
-            exit(true);
-    exit(false);
+            Exit(true);
+    Exit(false);
 end;
 
 function TConfigProperty.GetPropertyValueType: TPropertyValueType;
 begin
-    exit(TPropertyValueType(FValueType));
+    Exit(TPropertyValueType(FValueType));
 end;
 
 procedure TConfigProperty.SetStr(str: string);
@@ -115,7 +139,7 @@ begin
     if str = '' then
     begin
         FError := 'нет значения';
-        exit;
+        Exit;
     end;
 
     if length(FList) > 0 then
@@ -131,12 +155,12 @@ begin
             FError := 'значение должно быть из списка: ' + FList[0];
             for i := 1 to length(FList) - 1 do
                 FError := FError + '; ' + FList[i];
-            exit;
+            Exit;
         end;
     end;
 
     ok := true;
-    if (ValueType = VtInt) or (ValueType = VtBaud)  then
+    if (ValueType = VtInt) or (ValueType = VtBaud) then
     begin
         ok := TryStrToInt(str, vInt);
         v := vInt;
@@ -148,17 +172,17 @@ begin
         ok := TryStrToFloat(str, v);
         if not ok then
             FError := 'не правильный синтаксис числа c плавающей точкой';
-    end else if ValueType = VtBool then
+    end
+    else if ValueType = VtBool then
     begin
         ok := TryStrToBool(str, v_bool);
         if not ok then
             FError := 'не правильный синтаксис логического значения';
-
     end;
 
     if ok then
     begin
-        if  Assigned(FMin) and (v < FMin.FValue) then
+        if Assigned(FMin) and (v < FMin.FValue) then
             FError := 'меньше ' + floattostr(FMin.FValue)
         else if Assigned(FMax) and (v > FMax.FValue) then
             FError := 'больше ' + floattostr(FMax.FValue);

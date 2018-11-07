@@ -87,17 +87,38 @@ begin
     exit(pipe_conn.GetResponse(method, params));
 end;
 
+function formatMessagetype(mt:TJsonRpcObjectType):string;
+begin
+     case mt of
+        jotInvalid: exit('jotInvalid');
+        jotRequest: exit('jotRequest');
+        jotNotification: exit('jotNotification');
+        jotSuccess: exit('jotSuccess');
+        jotError: exit('jotError');
+    end;
+end;
+
 function TServerApp.MustGetResult(const method: string; params: ISuperObject)
   : ISuperObject;
+var
+    r: IJsonRpcParsed;
+    mt:TJsonRpcObjectType;
+    str_payload:string;
 begin
-    with pipe_conn.GetResponse(method, params) do
+    r := pipe_conn.GetResponse(method, params);
+    mt := r.GetMessageType;
+    if mt <> jotSuccess then
     begin
-        if GetMessageType <> jotSuccess then
-            raise Exception.Create(Format('%s%s'#13'%s',
-              [method, params.AsString, GetMessagePayload.AsJSon(true, true)]));
-        result := GetMessagePayload.AsJsonObject['result'];
+        str_payload:= '';
+        if Assigned(r.GetMessagePayload) then
+            str_payload := r.GetMessagePayload.AsJSon(true, true);
 
+        raise Exception.Create(Format('%s%s'#13'%s'#13'%s', [method, params.AsString,
+          str_payload,
+          formatMessagetype(mt)
+          ]));
     end;
+    result := r.GetMessagePayload.AsJsonObject['result'];
 
 end;
 

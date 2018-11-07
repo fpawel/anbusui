@@ -51,7 +51,7 @@ type
         PanelNetwork: TPanel;
         Splitter1: TSplitter;
         Panel5: TPanel;
-    PanelStatus: TPanel;
+        PanelStatus: TPanel;
         ToolBar4: TToolBar;
         ToolButtonConsoleHide: TToolButton;
         ImageList3: TImageList;
@@ -64,6 +64,7 @@ type
         ToolButton6: TToolButton;
         ImageList1: TImageList;
         ComboBox1: TComboBox;
+        ToolButton1: TToolButton;
         procedure FormCreate(Sender: TObject);
         procedure PageControlMainDrawTab(Control: TCustomTabControl;
           TabIndex: integer; const Rect: TRect; Active: boolean);
@@ -80,7 +81,12 @@ type
         procedure ToolButton4Click(Sender: TObject);
         procedure ToolButton5Click(Sender: TObject);
         procedure ToolButton6Click(Sender: TObject);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+        procedure FormClose(Sender: TObject; var Action: TCloseAction);
+        procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
+          WheelDelta: integer; MousePos: TPoint; var Handled: boolean);
+        procedure RichEdit1MouseDown(Sender: TObject; Button: TMouseButton;
+          Shift: TShiftState; X, Y: integer);
+        procedure ToolButton1Click(Sender: TObject);
     private
         { Private declarations }
         FhWndTip: THandle;
@@ -88,7 +94,6 @@ type
         procedure HandleNotifyText(t: TNotifyText);
 
         procedure SetStatusText(level: string; AText: string);
-        procedure AddConsoleText(level: string; AText: string);
 
         procedure HandleCopydata(var Message: TMessage); message WM_COPYDATA;
         procedure WMWindowPosChanged(var AMessage: TMessage);
@@ -97,11 +102,18 @@ type
 
     public
         { Public declarations }
+        procedure AddConsoleText(level: string; AText: string);
 
     end;
 
 var
     AnbusMainForm: TAnbusMainForm;
+
+const
+    n_console = 'console';
+    n_status = 'status';
+    n_info = 'info';
+    n_err = 'error';
 
 implementation
 
@@ -111,13 +123,7 @@ uses serverapp_msg, rest.json, runhostapp, json, vclutils,
     model_config, PropertiesFormUnit,
     UnitFormReadVars, stringutils, model_network, ComponentBaloonHintU,
     richeditutils, UnitFormChartSeries, Unit1, superobject, ujsonrpc,
-  UnitFormBuckets;
-
-const
-    n_console = 'console';
-    n_status = 'status';
-    n_info = 'info';
-    n_err = 'error';
+    UnitFormBuckets, System.StrUtils, System.Types;
 
 function CommandsFileName: string;
 begin
@@ -126,8 +132,8 @@ end;
 
 procedure TAnbusMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-    if (ParamCount > 1)and (ParamStr(1) = '-must-close-server') then
-        SendMessage(FindWindow('AnbusServerAppWindow',nil), WM_CLOSE, 0, 0);
+    if ParamStr(1) = '-must-close-server' then
+        SendMessage(FindWindow('AnbusServerAppWindow', nil), WM_CLOSE, 0, 0);
 end;
 
 procedure TAnbusMainForm.FormCreate(Sender: TObject);
@@ -138,21 +144,23 @@ begin
     if FileExists(CommandsFileName) then
         ComboBox1.Items.LoadFromFile(CommandsFileName);
 
-    // for n := 0 to DataModule1.IdHTTPServer1.Bindings.Count - 1 do
-    // begin
-    // with DataModule1.IdHTTPServer1.Bindings[n] do
-    // begin
-    // Richedit1.Lines.Add(ip + ':' + IntToStr(Port));
-    // end;
-    // end;
+end;
 
+procedure TAnbusMainForm.FormMouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: integer; MousePos: TPoint; var Handled: boolean);
+begin
+    FormChartSeries.ChangeAxisOrder(GetVCLControlAtPos(self, MousePos),
+      WheelDelta);
 end;
 
 procedure TAnbusMainForm.ComboBox1KeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 var
     r: IJsonRpcParsed;
-    t:TJsonRpcObjectType;
+    t: TJsonRpcObjectType;
+    words: System.Types.TStringDynArray;
+    I: integer;
+    s: string;
 begin
     with ComboBox1 do
         case Key of
@@ -174,23 +182,41 @@ begin
                     Text := Trim(Text);
                     if Text <> '' then
                     begin
-                        r := ServerApp.GetResponse('CmdSvc.Perform',
-                          SO(Format('["%s"]', [Text])));
-                          t := r.GetMessageType;
+                        words := SplitString(Text, ' ');
+
+                        if (Length(words) > 1) AND (words[0] = 'call') then
+                        begin
+                            if Length(words) = 2 then
+                                r := ServerApp.GetResponse(words[1], SO('[]'))
+                            else
+                            begin
+                                s := words[2];
+                                for I := 3 to Length(words) - 1 do
+                                    s := s + ' ' + words[I];
+                                r := ServerApp.GetResponse(words[1], SO(s));
+                            end;
+
+                        end
+                        else
+                            r := ServerApp.GetResponse('CmdSvc.Perform',
+                              SO(Format('["%s"]', [Text])));
+                        t := r.GetMessageType;
                         if t = jotError then
                         begin
                             AddConsoleText(n_err,
-                              r.GetMessagePayload.AsJsonObject
-                              ['error']['message'].AsString);
-                        end
-                        else
-                        begin
-                            if Items.IndexOf(Text) > -1 then
-                                Items.Exchange(Items.IndexOf(Text), 0)
-                            else
-                                Items.insert(0, Text);
-                            Items.SaveToFile(CommandsFileName);
+                              r.GetMessagePayload.AsJsonObject['error']
+                              ['message'].AsString);
                         end;
+
+                        if words[0] = 'call' then
+                            RichEdit1.Text := r.GetMessagePayload.AsJSon
+                              (true, true);
+
+                        if Items.IndexOf(Text) > -1 then
+                            Items.Exchange(Items.IndexOf(Text), 0)
+                        else
+                            Items.insert(0, Text);
+                        Items.SaveToFile(CommandsFileName);
                         Text := '';
                     end;
                     Key := 0;
@@ -246,7 +272,7 @@ begin
 
     with PropertiesForm do
     begin
-        Font.Assign(Self.Font);
+        Font.Assign(self.Font);
         BorderStyle := bsNone;
         Align := alClient;
         Parent := TabSheetSettings;
@@ -256,7 +282,7 @@ begin
 
     with FormReadVars do
     begin
-        Font.Assign(Self.Font);
+        Font.Assign(self.Font);
         BorderStyle := bsNone;
         Align := alClient;
         Parent := PanelNetwork;
@@ -269,25 +295,25 @@ begin
         Align := alClient;
         BorderStyle := bsNone;
         Visible := true;
-        Font.Assign(Self.Font);
+        Font.Assign(self.Font);
+        Panel2.Hide;
         NewChart;
     end;
 
-     with FormBuckets do
+    with FormBuckets do
     begin
         Parent := TabSheetArchive;
         Align := alClient;
         BorderStyle := bsNone;
         Visible := true;
-        Font.Assign(Self.Font);
+        Font.Assign(self.Font);
     end;
 
     FormReadVars.UpdateNetwork('SetsSvc.Network');
 
     PropertiesForm.SetConfig(TJson.JsonToObject<TConfig>
-      (ServerApp.MustGetResult( 'SetsSvc.UserConfig', SO('{}')).AsString));
+      (ServerApp.MustGetResult('SetsSvc.UserConfig', SO('{}')).AsString));
 
-    // ServerApp.MustSendUserMsg(msgPeer, 0, 0);
 end;
 
 procedure TAnbusMainForm.PageControlMainChange(Sender: TObject);
@@ -302,6 +328,13 @@ begin
     PageControl_DrawVerticalTab(Control, TabIndex, Rect, Active);
 end;
 
+procedure TAnbusMainForm.RichEdit1MouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: integer);
+begin
+    if Button = TMouseButton.mbRight then
+        RichEdit_PopupMenu(RichEdit1);
+end;
+
 procedure TAnbusMainForm.WMActivateApp(var AMessage: TMessage);
 begin
     CloseWindow(FhWndTip);
@@ -312,6 +345,11 @@ procedure TAnbusMainForm.WMWindowPosChanged(var AMessage: TMessage);
 begin
     CloseWindow(FhWndTip);
     inherited;
+end;
+
+procedure TAnbusMainForm.ToolButton1Click(Sender: TObject);
+begin
+    RichEdit1.Text := '';
 end;
 
 procedure TAnbusMainForm.ToolButton3Click(Sender: TObject);

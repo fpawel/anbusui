@@ -23,8 +23,10 @@ procedure ConvertImagesToHighColor(ImageList: TImageList);
 // Title - tooltip title (bold first line).
 // Text - tooltip text.
 
-procedure ShowBalloonTip(hWnd: THandle; Icon: integer; BackCL, TextCL: TColor;
-  Title: pchar; Text: PWideChar);
+function ShowBalloonTip(hWnd: THandle; Icon: integer; BackCL, TextCL: TColor;
+  Title: string; Text: string): THandle;
+
+function GetVCLControlAtPos(c: TWinControl; mousePos: TPoint): TWinControl;
 
 implementation
 
@@ -142,8 +144,8 @@ end;
 // Title - tooltip title (bold first line).
 // Text - tooltip text.
 
-procedure ShowBalloonTip(hWnd: THandle; Icon: integer; BackCL, TextCL: TColor;
-  Title: pchar; Text: PWideChar);
+function ShowBalloonTip(hWnd: THandle; Icon: integer; BackCL, TextCL: TColor;
+  Title: string; Text: string): THandle;
 const
     TOOLTIPS_CLASS = 'tooltips_class32';
     TTS_ALWAYSTIP = $01;
@@ -168,35 +170,47 @@ type
     end;
 
 var
-    hWndTip: THandle;
     ti: TOOLINFO;
 begin
-    hWndTip := CreateWindow(TOOLTIPS_CLASS, nil, WS_POPUP or TTS_CLOSE or
+    Result := CreateWindow(TOOLTIPS_CLASS, nil, WS_POPUP or TTS_CLOSE or
       TTS_NOPREFIX or TTS_BALLOON or TTS_ALWAYSTIP, 0, 0, 0, 0, hWnd, 0,
       HInstance, nil);
 
-    if hWndTip <> 0 then
+    if Result = 0 then
+        Exit;
+    SetWindowPos(Result, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE or
+      SWP_NOMOVE or SWP_NOSIZE);
+
+    ti.cbSize := SizeOf(ti);
+    ti.uFlags := TTF_CENTERTIP or TTF_TRANSPARENT or TTF_SUBCLASS;
+    ti.hWnd := hWnd;
+    ti.lpszText := PChar(Text);
+
+    GetClientRect(hWnd, ti.Rect);
+    if BackCL <> clDefault then
+        SendMessage(Result, TTM_SETTIPBKCOLOR, BackCL, 0);
+    if TextCL <> clDefault then
+        SendMessage(Result, TTM_SETTIPTEXTCOLOR, TextCL, 0);
+    SendMessage(Result, TTM_ADDTOOL, 1, integer(@ti));
+    SendMessage(Result, TTM_SETTITLE, Icon,
+      integer(PAnsiChar(AnsiString(Title))));
+
+    // TTM_TRACKACTIVATE => Makes sure you have to close the hint you self
+    SendMessage(Result, TTM_TRACKACTIVATE, integer(true), integer(@ti));
+end;
+
+function GetVCLControlAtPos(c: TWinControl; mousePos: TPoint): TWinControl;
+var
+    p: TPoint;
+begin
+
+    p := c.ScreenToClient(mousePos);
+    c := TWinControl(c.ControlAtPos(p, false, true));
+    while Assigned(c) do
     begin
-        SetWindowPos(hWndTip, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE or
-          SWP_NOMOVE or SWP_NOSIZE);
-
-        ti.cbSize := SizeOf(ti);
-        ti.uFlags := TTF_CENTERTIP or TTF_TRANSPARENT or TTF_SUBCLASS;
-        ti.hWnd := hWnd;
-        ti.lpszText := Text;
-
-        GetClientRect(hWnd, ti.Rect);
-        if BackCL <> clDefault then
-            SendMessage(hWndTip, TTM_SETTIPBKCOLOR, BackCL, 0);
-
-        if TextCL <> clDefault then
-            SendMessage(hWndTip, TTM_SETTIPTEXTCOLOR, TextCL, 0);
-
-        SendMessage(hWndTip, TTM_ADDTOOL, 1, integer(@ti));
-        SendMessage(hWndTip, TTM_SETTITLE, Icon mod 4, integer(Title));
-
-        // TTM_TRACKACTIVATE => Makes sure you have to close the hint you self
-        SendMessage(hWndTip, TTM_TRACKACTIVATE, integer(true), integer(@ti));
+        Result := c;
+        p := c.ScreenToClient(mousePos);
+        c := TWinControl(c.ControlAtPos(p, false, true));
     end;
 end;
 

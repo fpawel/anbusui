@@ -38,6 +38,8 @@ type
         procedure TreeView1Expanding(Sender: TBaseVirtualTree;
           Node: PVirtualNode; var Allowed: Boolean);
         procedure TreeView1Change(Sender: TBaseVirtualTree; Node: PVirtualNode);
+    procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     private
         { Private declarations }
         function GetTreeData(Node: PVirtualNode): PTreeData;
@@ -75,7 +77,7 @@ implementation
 {$R *.dfm}
 
 uses superobject, stringutils, rest.json,
-    dateutils, UnitServerApp, UnitFormChartSeries, stringgridutils;
+    dateutils, UnitServerApp, UnitFormChartSeries, stringgridutils, vclutils;
 
 var
     AFormChartSeries: TFormChartSeries;
@@ -107,6 +109,13 @@ begin
 
 end;
 
+procedure TFormBuckets.FormMouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+begin
+    AFormChartSeries.ChangeAxisOrder(GetVCLControlAtPos(self, MousePos),
+      WheelDelta);
+end;
+
 procedure TFormBuckets.TreeView1Change(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
 var
@@ -120,6 +129,7 @@ begin
     if Assigned(TreeData[Node]) AND (TreeData[Node].NodeKind = trdBucket) then
     begin
         AFormChartSeries.NewChart;
+        AFormChartSeries.FBucketID := TreeData[Node].Value;
 
         for i in ServerApp.MustGetResult('BucketsSvc.Vars',
           SO(Format('[%d]', [TreeData[Node].Value]))) do

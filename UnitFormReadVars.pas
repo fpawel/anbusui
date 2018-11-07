@@ -27,8 +27,8 @@ type
           Shift: TShiftState; X, Y: Integer);
         procedure StringGrid1SetEditText(Sender: TObject; ACol, ARow: Integer;
           const Value: string);
-    procedure StringGrid1MouseMove(Sender: TObject; Shift: TShiftState; X,
-      Y: Integer);
+        procedure StringGrid1MouseMove(Sender: TObject; Shift: TShiftState;
+          X, Y: Integer);
     private
         { Private declarations }
         Last_Edited_Col, Last_Edited_Row: Integer;
@@ -247,22 +247,36 @@ end;
 procedure TFormReadVars.StringGrid1KeyPress(Sender: TObject; var Key: Char);
 var
     g: TStringGrid;
-    ARow: Integer;
+    ARow, ACol: Integer;
     v: Boolean;
 
 begin
     g := Sender as TStringGrid;
-    if (g.row > 0) AND (ord(Key) in [32, 27]) then
+    if (g.row > 0) AND (ord(Key) in [27, 32]) then
     begin
-        v := FNetwork.FVars[row2var(g.Selection.Top)].FUnchecked;
+        v := FormChartSeries.SeriesOf(AddrByIndex(col2place(g.Selection.Left)),
+          VarByIndex(row2var(g.Selection.Top))).ParentChart <> nil;
         for ARow := g.Selection.Top to g.Selection.Bottom do
-            SetRowChecked(ARow, not v);
+            for ACol := g.Selection.Left to g.Selection.Right do
+                FormChartSeries.SetAddrVarSeries(AddrByIndex(col2place(ACol)),
+                  VarByIndex(row2var(ARow)), not v);
+    end;
+
+    if ord(Key) = 24 then
+    begin
+        v := FormChartSeries.SeriesOf(AddrByIndex(col2place(1)),
+          VarByIndex(row2var(1))).ParentChart <> nil;
+        for ARow := 1 to g.RowCount-1 do
+            for ACol := 1 to g.ColCount-1 do
+                FormChartSeries.SetAddrVarSeries(AddrByIndex(col2place(ACol)),
+                  VarByIndex(row2var(ARow)), not v);
+
     end;
 
     if ord(Key) = 1 then
     begin
-        v := FNetwork.FVars[row2var(g.Selection.Top)].FUnchecked;
-        for ARow := 2 to StringGrid1.RowCount - 1 do
+        v := FNetwork.FVars[row2var(1)].FUnchecked;
+        for ARow := 1 to StringGrid1.RowCount - 1 do
             SetRowChecked(ARow, not v);
 
     end;
@@ -316,7 +330,7 @@ end;
 procedure TFormReadVars.StringGrid1MouseMove(Sender: TObject;
   Shift: TShiftState; X, Y: Integer);
 begin
-     with Sender as TStringGrid do
+    with Sender as TStringGrid do
     begin
         if not EditorMode then
         begin
@@ -361,8 +375,8 @@ begin
         // Do whatever else wanted
         Options := Options - [goEditing];
 
-//        if (ARow <> 0)  then
-//            FixedRows := 1;
+        // if (ARow <> 0)  then
+        // FixedRows := 1;
 
     end;
 
@@ -389,7 +403,7 @@ begin
             begin
 
                 if TryStrToInt(Value, n) and (n > 0) and (n < 256) then
-                    ServerApp.GetResponse( 'SetsSvc.SetAddr',
+                    ServerApp.GetResponse('SetsSvc.SetAddr',
                       SO(Format('{"place": %d, "addr":%d}',
                       [col2place(ACol), n])))
                 else
@@ -399,7 +413,7 @@ begin
             if ACol = 0 then
             begin
                 if TryStrToInt(Value, n) and (n > -1) then
-                    ServerApp.GetResponse( 'SetsSvc.SetVar',
+                    ServerApp.GetResponse('SetsSvc.SetVar',
                       SO(Format('{"index":%d,"var":%d}', [row2var(ARow), n])))
                 else
                     UpdateNetwork('SetsSvc.Network');
@@ -435,7 +449,7 @@ begin
         EditorMode := false;
         Options := Options - [goEditing];
         RowCount := Length(FNetwork.FVars) + 1;
-        //FixedRows := 1;
+        // FixedRows := 1;
         ColCount := Length(FNetwork.FPlaces) + 1;
         Cells[0, 0] := '№';
         Cells[1, 0] := 'Параметр';

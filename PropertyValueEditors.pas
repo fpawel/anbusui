@@ -12,7 +12,6 @@ uses
 
 type
 
-
     // ----------------------------------------------------------------------------------------------------------------------
     // Our own edit link to implement several different node editors.
     TPropertyEditLink = class(TInterfacedObject, IVTEditLink)
@@ -22,9 +21,11 @@ type
         FNode: PVirtualNode; // The node being edited.
         FColumn: integer; // The column of the node being edited.
         FConfigData: PConfigData;
-        procedure DoPropertyValueChanged;
+        procedure ChangePropertyValue(v: string);
 
-        procedure EditOnChange(Sender:TObject);
+        procedure EditOnChange(Sender: TObject);
+        procedure ComboBoxOnChange(Sender: TObject);
+        procedure CheckBoxOnChange(Sender: TObject);
 
     protected
         procedure EditKeyDown(Sender: TObject; var Key: Word;
@@ -41,7 +42,7 @@ type
           Column: TColumnIndex): boolean; stdcall;
         procedure ProcessMessage(var Message: TMessage); stdcall;
         procedure SetBounds(R: TRect); stdcall;
-        
+
     end;
 
     // ----------------------------------------------------------------------------------------------------------------------
@@ -59,7 +60,7 @@ type
 implementation
 
 uses
-    listports, vclutils, UnitServerApp;
+    listports, vclutils, UnitServerApp, stringutils;
 
 // ----------------- TPropertyEditLink ----------------------------------------------------------------------------------
 
@@ -77,11 +78,6 @@ begin
 end;
 
 // ----------------------------------------------------------------------------------------------------------------------
-
-procedure TPropertyEditLink.EditOnChange(Sender:TObject);
-begin
-    DoPropertyValueChanged;
-end;
 
 procedure TPropertyEditLink.EditKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
@@ -159,39 +155,8 @@ end;
 // ----------------------------------------------------------------------------------------------------------------------
 
 function TPropertyEditLink.EndEdit: boolean;
-
-var
-    prop: TConfigProperty;
-    Buffer: array [0 .. 1024] of Char;
-    S: UnicodeString;
 begin
     Result := true;
-
-    prop := PConfigData(FTree.GetNodeData(FNode)).prop;
-    if FEdit is TComboBox then
-        S := TComboBox(FEdit).Text
-    else if FEdit is TCheckBox then
-    begin
-        if (FEdit as TCheckBox).Checked then
-            S := '1'
-        else
-            S := '0';
-    end
-    else
-    begin
-        GetWindowText(FEdit.Handle, Buffer, 1024);
-        S := Buffer;
-    end;
-
-    if S <> prop.FValue then
-    begin
-        prop.SetStr(S);
-        DoPropertyValueChanged;
-
-        // DataModule1.UpdateConfigPropertyValue(Data.FSectionName, Data.FPropertyName, Data.FValue);
-        FTree.InvalidateNode(FNode);
-        FTree.InvalidateNode(FNode.Parent);
-    end;
     FEdit.Hide;
     try
         FTree.SetFocus;
@@ -227,8 +192,8 @@ begin
     FEdit.Free;
     FEdit := nil;
 
-    if (length(FConfigData.Prop.FList) > 0) or (FConfigData.Prop.ValueType in
-        [ VtComportName, VtBaud ] ) then
+    if (length(FConfigData.prop.FList) > 0) or
+      (FConfigData.prop.ValueType in [VtComportName, VtBaud]) then
     begin
         FEdit := TComboBox.Create(nil);
         with FEdit as TComboBox do
@@ -236,68 +201,69 @@ begin
 
             Visible := False;
             Parent := Tree;
-            Text := FConfigData.Prop.FValue;
-            if FConfigData.Prop.ValueType = VtComportName then
+            Text := FConfigData.prop.FValue;
+            if FConfigData.prop.ValueType = VtComportName then
                 EnumComPorts(Items)
-            else if FConfigData.Prop.ValueType = VtBaud then
+            else if FConfigData.prop.ValueType = VtBaud then
                 EnumBaudRates(Items)
             else
-                for i := 0 to length(FConfigData.Prop.FList) - 1 do
-                    Items.Add(FConfigData.Prop.FList[i]);
+                for i := 0 to length(FConfigData.prop.FList) - 1 do
+                    Items.Add(FConfigData.prop.FList[i]);
             OnKeyDown := EditKeyDown;
             OnKeyUp := EditKeyUp;
             style := csDropDown;
             ItemHeight := 22;
-            ItemIndex := Items.IndexOf(FConfigData.Prop.FValue);
+            ItemIndex := Items.IndexOf(FConfigData.prop.FValue);
+            OnChange := ComboBoxOnChange;
+        end;
+    end
+
+    else if FConfigData.prop.ValueType = VtString then
+    begin
+        FEdit := TEdit.Create(nil);
+        with FEdit as TEdit do
+        begin
+
+            Visible := False;
+            Parent := Tree;
+            Text := FConfigData.prop.FValue;
+            OnKeyDown := EditKeyDown;
+            OnKeyUp := EditKeyUp;
+            OnChange := EditOnChange;
+
+        end;
+    end
+
+    else if FConfigData.prop.ValueType = VtInt then
+    begin
+        FEdit := TEdit.Create(nil);
+        with FEdit as TEdit do
+        begin
+
+            Visible := False;
+            Parent := Tree;
+            Text := FConfigData.prop.FValue;
+            OnKeyDown := EditKeyDown;
+            OnKeyUp := EditKeyUp;
+            OnChange := EditOnChange;
+        end;
+    end
+    else if FConfigData.prop.ValueType = VtFloat then
+    begin
+        FEdit := TEdit.Create(nil);
+        with FEdit as TEdit do
+        begin
+
+            Visible := False;
+            Parent := Tree;
+            Text := FConfigData.prop.FValue;
+            OnKeyDown := EditKeyDown;
+            OnKeyUp := EditKeyUp;
             OnChange := EditOnChange;
         end;
     end
 
-    else if FConfigData.Prop.ValueType = VtString then
-    begin
-        FEdit := TEdit.Create(nil);
-        with FEdit as TEdit do
-        begin
-
-            Visible := False;
-            Parent := Tree;
-            Text := FConfigData.Prop.FValue;
-            OnKeyDown := EditKeyDown;
-            OnKeyUp := EditKeyUp;
-
-        end;
-    end
-
-    else if FConfigData.Prop.ValueType = VtInt then
-    begin
-        FEdit := TEdit.Create(nil);
-        with FEdit as TEdit do
-        begin
-
-            Visible := False;
-            Parent := Tree;
-            Text := FConfigData.Prop.FValue;
-            OnKeyDown := EditKeyDown;
-            OnKeyUp := EditKeyUp;
-
-        end;
-    end
-    else if FConfigData.Prop.ValueType = VtFloat then
-    begin
-        FEdit := TEdit.Create(nil);
-        with FEdit as TEdit do
-        begin
-
-            Visible := False;
-            Parent := Tree;
-            Text := FConfigData.Prop.FValue;
-            OnKeyDown := EditKeyDown;
-            OnKeyUp := EditKeyUp;
-
-        end;
-    end
-
-    else if FConfigData.Prop.ValueType = VtBool then
+    else if FConfigData.prop.ValueType = VtBool then
     begin
         FEdit := TCheckBox.Create(nil);
         with FEdit as TCheckBox do
@@ -305,23 +271,32 @@ begin
 
             Visible := False;
             Parent := Tree;
-            if FConfigData.Prop.FValue = '0' then
-                FConfigData.Prop.FValue := '1'
-            else
-                FConfigData.Prop.FValue := '0';
-
-            Checked := FConfigData.Prop.FValue <> '0';
+            Checked := not FConfigData.prop.Bool;
+            CheckBoxOnChange(FEdit);
             Caption := '---';
-
-            FConfigData.Prop.SetStr(FConfigData.Prop.FValue);
-            DoPropertyValueChanged;
-            OnClick := EditOnChange;
-
+            OnClick := CheckBoxOnChange;
         end;
     end
     else
         Result := False;
 end;
+
+procedure TPropertyEditLink.EditOnChange(Sender: TObject);
+begin
+    ChangePropertyValue((Sender as TEdit).Text);
+end;
+
+procedure TPropertyEditLink.ComboBoxOnChange(Sender: TObject);
+begin
+    ChangePropertyValue((Sender as TComboBox).Text);
+end;
+
+procedure TPropertyEditLink.CheckBoxOnChange(Sender: TObject);
+begin
+    FConfigData.prop.Bool := (Sender as TCheckBox).Checked;
+    ChangePropertyValue(FConfigData.prop.FValue);
+end;
+
 
 
 // ----------------------------------------------------------------------------------------------------------------------
@@ -347,14 +322,17 @@ begin
 end;
 // ----------------------------------------------------------------------------------------------------------------------
 
-procedure TPropertyEditLink.DoPropertyValueChanged;
+procedure TPropertyEditLink.ChangePropertyValue(v: string);
 var
     pc: TChangedPropertyValue;
 begin
-    if (not FConfigData.Prop.HasError) then
+    FConfigData.prop.SetStr(v);
+    FTree.InvalidateNode(FNode);
+    FTree.InvalidateNode(FNode.Parent);
+    if (not FConfigData.prop.HasError) then
     begin
         pc := TChangedPropertyValue.Create(FConfigData);
-        FConfigData.Prop.FError := ServerApp.SetConfigProperyValue(pc);
+        FConfigData.prop.FError := ServerApp.SetConfigProperyValue(pc);
         pc.Free;
     end;
 
