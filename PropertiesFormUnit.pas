@@ -55,6 +55,7 @@ type
           CellPaintMode: TVTCellPaintMode; CellRect: TRect;
           var ContentRect: TRect);
         procedure FormHide(Sender: TObject);
+    procedure FormDeactivate(Sender: TObject);
 
     private
         FConfig: TConfig;
@@ -355,6 +356,11 @@ begin
 end;
 
 // ----------------------------------------------------------------------------------------------------------------------
+
+procedure TPropertiesForm.FormDeactivate(Sender: TObject);
+begin
+    Hide;
+end;
 
 procedure TPropertiesForm.FormHide(Sender: TObject);
 begin

@@ -7,7 +7,7 @@ uses
     System.Classes, Vcl.Graphics,
     Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Menus, Vcl.ComCtrls,
     Vcl.ToolWin, Vcl.ExtCtrls, Vcl.Grids, System.ImageList, Vcl.ImgList,
-    UnitServerApp;
+    UnitServerApp, ComponentBaloonHintU;
 
 type
     THostAppCommand = (cmdNotifyText, cmdReadVar);
@@ -32,7 +32,6 @@ type
         ImageList4: TImageList;
         PageControlMain: TPageControl;
         TabSheetVars: TTabSheet;
-        TabSheetSettings: TTabSheet;
         TabSheetArchive: TTabSheet;
         Panel14: TPanel;
         Panel4: TPanel;
@@ -65,6 +64,7 @@ type
         ImageList1: TImageList;
         ComboBox1: TComboBox;
         ToolButton1: TToolButton;
+    ToolButton2: TToolButton;
         procedure FormCreate(Sender: TObject);
         procedure PageControlMainDrawTab(Control: TCustomTabControl;
           TabIndex: integer; const Rect: TRect; Active: boolean);
@@ -87,6 +87,7 @@ type
         procedure RichEdit1MouseDown(Sender: TObject; Button: TMouseButton;
           Shift: TShiftState; X, Y: integer);
         procedure ToolButton1Click(Sender: TObject);
+    procedure ToolButton2Click(Sender: TObject);
     private
         { Private declarations }
         FhWndTip: THandle;
@@ -106,6 +107,9 @@ type
         { Public declarations }
         procedure AddConsoleText(level: string; AText: string);
 
+        procedure NewBallonTip(c: TWinControl; Icon: TIconKind;
+          const Title, Text: string);
+
     end;
 
 var
@@ -123,7 +127,7 @@ implementation
 
 uses serverapp_msg, rest.json, runhostapp, json, vclutils,
     model_config, PropertiesFormUnit,
-    UnitFormReadVars, stringutils, model_network, ComponentBaloonHintU,
+    UnitFormReadVars, stringutils, model_network,
     richeditutils, UnitFormChartSeries, Unit1, superobject, ujsonrpc,
     UnitFormBuckets, System.StrUtils, System.Types;
 
@@ -139,13 +143,10 @@ begin
 end;
 
 procedure TAnbusMainForm.FormCreate(Sender: TObject);
-// var n:integer;
 begin
-    ToolButtonConsoleHideClick(nil);
-    // SendMessage(hWndServer, WM_CLOSE, 0, 0);
+    ToolButtonConsoleHide.Click;
     if FileExists(CommandsFileName) then
         ComboBox1.Items.LoadFromFile(CommandsFileName);
-
 end;
 
 procedure TAnbusMainForm.FormMouseWheel(Sender: TObject; Shift: TShiftState;
@@ -206,9 +207,10 @@ begin
                         if t = jotError then
                         begin
                             CloseWindow(FhWndTip);
-                            FhWndTip := ComboBox1.ShowBalloonTip(TIconKind.Error,
-                              'Ошибка ввода', r.GetMessagePayload.AsJsonObject
-                              ['error']['message'].AsString);
+                            FhWndTip := ComboBox1.ShowBalloonTip
+                              (TIconKind.Error, 'Ошибка ввода',
+                              r.GetMessagePayload.AsJsonObject['error']
+                              ['message'].AsString);
                         end;
 
                         if words[0] = 'call' then
@@ -226,6 +228,14 @@ begin
                 end;
 
         end;
+end;
+
+procedure TAnbusMainForm.NewBallonTip(c: TWinControl; Icon: TIconKind;
+  const Title, Text: string);
+begin
+    CloseWindow(FhWndTip);
+    FhWndTip := c.ShowBalloonTip(Icon, Title, Text);
+
 end;
 
 procedure TAnbusMainForm.HandleCopydata(var Message: TMessage);
@@ -276,11 +286,10 @@ begin
     with PropertiesForm do
     begin
         Font.Assign(self.Font);
-        BorderStyle := bsNone;
-        Align := alClient;
-        Parent := TabSheetSettings;
-
-        Show;
+//        BorderStyle := bsNone;
+//        Align := alClient;
+//        Parent := PanelConfig;
+//        Show;
     end;
 
     with FormReadVars do
@@ -340,32 +349,18 @@ end;
 
 procedure TAnbusMainForm.WMEnterSizeMove(var Msg: TMessage);
 begin
-    if Assigned(FormChartSeries) then
-        FormChartSeries.CloseHint;
-
-    if Assigned(FormBuckets) then
-        FormBuckets.FFormChartSeries.CloseHint;
-
     CloseWindow(FhWndTip);
     inherited;
 end;
 
 procedure TAnbusMainForm.WMWindowPosChanged(var AMessage: TMessage);
 begin
-    if Assigned(FormChartSeries) then
-        FormChartSeries.CloseHint;
-
-    if Assigned(FormBuckets) then
-        FormBuckets.FFormChartSeries.CloseHint;
-
     CloseWindow(FhWndTip);
     inherited;
 end;
 
 procedure TAnbusMainForm.WMActivateApp(var AMessage: TMessage);
 begin
-    if Assigned(FormChartSeries) then
-        FormChartSeries.CloseHint;
     CloseWindow(FhWndTip);
     inherited;
 end;
@@ -373,6 +368,13 @@ end;
 procedure TAnbusMainForm.ToolButton1Click(Sender: TObject);
 begin
     RichEdit1.Text := '';
+end;
+
+procedure TAnbusMainForm.ToolButton2Click(Sender: TObject);
+begin
+    PropertiesForm.Position := TPosition.poScreenCenter;
+    PropertiesForm.Show;
+
 end;
 
 procedure TAnbusMainForm.ToolButton3Click(Sender: TObject);

@@ -58,7 +58,6 @@ type
         { Private declarations }
         FSeries: TDictionary<ProductVar, TFastLineSeries>;
         FChart1OriginalWndMethod: TWndMethod;
-        FhWndTip: THandle;
 
         procedure Chart1WndMethod(var Message: TMessage);
         procedure SetActiveSeries(ser: TFastLineSeries);
@@ -69,6 +68,7 @@ type
     public
         { Public declarations }
         FBucketID: int64;
+        FFileName: string;
 
         procedure AddValue(Addr, var_id: integer; value: double;
           time: TDateTime);
@@ -87,7 +87,6 @@ type
 
         function DeleteRequest: TArray<string>;
 
-        procedure CloseHint;
     end;
 
 var
@@ -484,13 +483,11 @@ begin
     for s in DeleteRequest do
     begin
         params := SO(s);
-        res := ServerApp.MustGetResult('BucketsSvc.DeletePoints', params);
+        res := ServerApp.MustGetResult('ChartSvc.DeletePoints', params);
         tot_db := tot_db + res.AsInteger;
 
     end;
-    CloseWindow(FhWndTip);
-    FhWndTip := ToolBar2.ShowBalloonTip( TIconKind.Info,
-      'Удаление точек',
+    AnbusMainForm.NewBallonTip(ToolBar2, TIconKind.Info, 'Удаление точек',
       Format('%d сохранённых точек удалено'#13'%d точек графика удалено',
       [tot_db, tot_chart]));
 
@@ -553,11 +550,6 @@ begin
     FChart1OriginalWndMethod(Message);
 end;
 
-procedure TFormChartSeries.CloseHint;
-begin
-    CloseWindow(FhWndTip);
-end;
-
 procedure TFormChartSeries.SetAddrVarSeries(Addr, var_id: integer;
 visible: boolean);
 var
@@ -605,7 +597,7 @@ begin
     if a.Minimum = a.Maximum then
         exit;
 
-    step := (a.Maximum - a.Minimum) * 0.01;
+    step := (a.Maximum - a.Minimum) * 0.03;
     if WheelDelta < 0 then
         step := step * -1;
 
@@ -628,7 +620,7 @@ end;
 
 function TFormChartSeries.DeleteRequest: TArray<string>;
 const
-    fmt = '{"BucketID":%d, "Addr":%d, "Var":%d, "ValueMinimum":%s, "ValueMaximum":%s, "TimeMinimum":%s, "TimeMaximum":%s}';
+    fmt = '{"FileName":"%s","BucketID":%d, "Addr":%d, "Var":%d, "ValueMinimum":%s, "ValueMaximum":%s, "TimeMinimum":%s, "TimeMaximum":%s}';
 var
     i: TPair<ProductVar, TFastLineSeries>;
 begin
@@ -638,7 +630,7 @@ begin
         begin
             SetLength(Result, length(Result) + 1);
             Result[length(Result) - 1] :=
-              Format(fmt, [FBucketID, i.Key.Addr, i.Key.VarID,
+              Format(fmt, [FFileName, FBucketID, i.Key.Addr, i.Key.VarID,
               float_to_str(Chart1.LeftAxis.Minimum),
               float_to_str(Chart1.LeftAxis.Maximum),
               time_to_json(Chart1.BottomAxis.Minimum),

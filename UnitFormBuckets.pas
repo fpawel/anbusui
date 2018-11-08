@@ -120,20 +120,20 @@ begin
         FFormChartSeries.NewChart;
         FFormChartSeries.FBucketID := TreeData[Node].Value;
 
-        for i in ServerApp.MustGetResult('BucketsSvc.Vars',
-          SO(Format('[%d]', [TreeData[Node].Value]))) do
+        for i in ServerApp.MustGetResult('ChartSvc.Vars',
+          SO(Format('{"BucketID":%d}', [TreeData[Node].Value]))) do
         begin
             FFormChartSeries.ListBox1.Items.Add(inttostr(i.AsInteger));
         end;
 
-        for i in ServerApp.MustGetResult('BucketsSvc.Addresses',
-          SO(Format('[%d]', [TreeData[Node].Value]))) do
+        for i in ServerApp.MustGetResult('ChartSvc.Addresses',
+          SO(Format('{"BucketID":%d}', [TreeData[Node].Value]))) do
         begin
             FFormChartSeries.ListBox2.Items.Add(inttostr(i.AsInteger));
         end;
 
-        for i in ServerApp.MustGetResult('BucketsSvc.Records',
-          SO(Format('[%d]', [TreeData[Node].Value]))) do
+        for i in ServerApp.MustGetResult('ChartSvc.Records',
+          SO(Format('{"BucketID":%d}', [TreeData[Node].Value]))) do
         begin
             j := i.AsArray;
             t := EncodeDateTime(j[2].AsInteger, j[3].AsInteger, j[4].AsInteger,
@@ -224,7 +224,7 @@ var
     i: ISuperObject;
 begin
     TreeView1.Clear;
-    for i in ServerApp.MustGetResult('BucketsSvc.Years', SO('{}')) do
+    for i in ServerApp.MustGetResult('ChartSvc.Years', SO('{}')) do
     begin
         Node := TreeView1.AddChild(nil);
         TreeData[Node].Value := i.AsInteger;
@@ -238,8 +238,8 @@ var
     Node: PVirtualNode;
     i: ISuperObject;
 begin
-    for i in ServerApp.MustGetResult('BucketsSvc.Months',
-      SO(Format('[%d]', [TreeData[ParentNode].Value]))) do
+    for i in ServerApp.MustGetResult('ChartSvc.Months',
+      SO(Format('{"Year":%d}', [TreeData[ParentNode].Value]))) do
     begin
         Node := TreeView1.AddChild(ParentNode);
         TreeData[Node].Value := i.AsInteger;
@@ -253,8 +253,8 @@ var
     Node: PVirtualNode;
     i: ISuperObject;
 begin
-    for i in ServerApp.MustGetResult('BucketsSvc.Days',
-      SO(Format('[%d, %d]', [TreeData[ParentNode.Parent].Value,
+    for i in ServerApp.MustGetResult('ChartSvc.Days',
+      SO(Format('{"Year":%d, "Month":%d}', [TreeData[ParentNode.Parent].Value,
       TreeData[ParentNode].Value]))) do
     begin
         Node := TreeView1.AddChild(ParentNode);
@@ -271,8 +271,8 @@ var
     s: string;
     b: TBucket;
 begin
-    for i in ServerApp.MustGetResult('BucketsSvc.Buckets',
-      SO(Format('[%d, %d, %d]', [TreeData[ParentNode.Parent.Parent].Value,
+    for i in ServerApp.MustGetResult('ChartSvc.Buckets',
+      SO(Format('{"Year":%d, "Month":%d, "Day":%d}', [TreeData[ParentNode.Parent.Parent].Value,
       TreeData[ParentNode.Parent].Value, TreeData[ParentNode].Value]))) do
     begin
         Node := TreeView1.AddChild(ParentNode);
