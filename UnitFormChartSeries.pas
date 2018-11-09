@@ -18,7 +18,6 @@ type
 
     TFormChartSeries = class(TForm)
         Panel14: TPanel;
-        Panel1: TPanel;
         Panel4: TPanel;
         Panel8: TPanel;
         Panel10: TPanel;
@@ -199,7 +198,6 @@ procedure TFormChartSeries.FormCreate(Sender: TObject);
 begin
     FSeries := TDictionary<ProductVar, TFastLineSeries>.create;
     Chart1.title.visible := false;
-
     FChart1OriginalWndMethod := Chart1.WindowProc;
     Chart1.WindowProc := Chart1WndMethod;
 

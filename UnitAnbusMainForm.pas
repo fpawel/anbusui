@@ -201,7 +201,7 @@ begin
 
                         end
                         else
-                            r := ServerApp.GetResponse('CmdSvc.Perform',
+                            r := ServerApp.GetResponse('MainSvc.PerformTextCommand',
                               SO(Format('["%s"]', [Text])));
                         t := r.GetMessageType;
                         if t = jotError then
@@ -331,7 +331,8 @@ end;
 procedure TAnbusMainForm.PageControlMainChange(Sender: TObject);
 begin
     (Sender as TPageControl).Repaint;
-    FormBuckets.ValidateData;
+    if FormBuckets.TreeView1.IsEmpty then
+        FormBuckets.CreateYearsNodes;
 end;
 
 procedure TAnbusMainForm.PageControlMainDrawTab(Control: TCustomTabControl;

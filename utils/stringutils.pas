@@ -18,6 +18,7 @@ function month_name(month_number: integer): string;
 
 function MyBoolToStr(v: boolean): string;
 function MyStrToBool(v: string): boolean;
+function escape_slash(s:string):String;
 
 
 implementation
@@ -29,6 +30,11 @@ begin
     result := StringReplace(FloatToStr(v), ',', '.', [rfReplaceAll]);
 end;
 
+
+function escape_slash(s:string):String;
+begin
+    result := StringReplace(S, '\', '\\', [rfReplaceAll]);
+end;
 
 
 function month_name(month_number: integer): string;

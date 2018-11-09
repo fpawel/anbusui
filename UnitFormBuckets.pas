@@ -8,7 +8,7 @@ uses
     Vcl.Controls, Vcl.Forms, Vcl.Dialogs, VirtualTrees, System.ImageList,
     Vcl.ImgList, Vcl.ExtCtrls, Vcl.StdCtrls, VclTee.TeeGDIPlus, VclTee.TeEngine,
     VclTee.TeeProcs, VclTee.Chart,
-    UnitFormChartSeries, VclTee.Series;
+    UnitFormChartSeries, VclTee.Series, Vcl.ComCtrls, Vcl.ToolWin;
 
 type
 
@@ -24,9 +24,16 @@ type
     end;
 
     TFormBuckets = class(TForm)
-        TreeView1: TVirtualStringTree;
         ImageList1: TImageList;
         Splitter1: TSplitter;
+        Panel14: TPanel;
+        TreeView1: TVirtualStringTree;
+        ToolBar3: TToolBar;
+        ToolButton4: TToolButton;
+        ToolButton2: TToolButton;
+        ImageList2: TImageList;
+        ToolButton1: TToolButton;
+        Label1: TLabel;
         procedure FormCreate(Sender: TObject);
         procedure TreeView1Collapsed(Sender: TBaseVirtualTree;
           Node: PVirtualNode);
@@ -40,11 +47,14 @@ type
         procedure TreeView1Change(Sender: TBaseVirtualTree; Node: PVirtualNode);
         procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
           WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+        procedure ToolButton2Click(Sender: TObject);
+        procedure ToolButton4Click(Sender: TObject);
+        procedure ToolButton1Click(Sender: TObject);
     private
         { Private declarations }
 
         function GetTreeData(Node: PVirtualNode): PTreeData;
-        procedure CreateYearsNodes;
+
         procedure CreateMonthsNodes(ParentNode: PVirtualNode);
         procedure CreateDaysNodes(ParentNode: PVirtualNode);
         procedure CreatePartiesNodes(ParentNode: PVirtualNode);
@@ -54,7 +64,7 @@ type
     public
         FFormChartSeries: TFormChartSeries;
         { Public declarations }
-        procedure ValidateData;
+        procedure CreateYearsNodes;
 
     end;
 
@@ -94,6 +104,7 @@ begin
         Visible := true;
         Font.Assign(self.Font);
         Visible := false;
+        ToolBar3.Visible := true;
     end;
 
 end;
@@ -103,6 +114,50 @@ procedure TFormBuckets.FormMouseWheel(Sender: TObject; Shift: TShiftState;
 begin
     FFormChartSeries.ChangeAxisOrder(GetVCLControlAtPos(self, MousePos),
       WheelDelta);
+end;
+
+procedure TFormBuckets.ToolButton1Click(Sender: TObject);
+begin
+    ServerApp.MustGetResult('MainSvc.OpenArchive', SO(Format('[%s]', ['""'])));
+    Label1.Visible := false;
+    CreateYearsNodes;
+end;
+
+procedure TFormBuckets.ToolButton2Click(Sender: TObject);
+begin
+    with TSaveDialog.Create(nil) do
+    begin
+        Filter := 'Файл архива графиков|*.chart';
+        Title := 'Сохранение архива графиков';
+        fileName := 'chart_' + FormatDateTime('dd_mmmm_dddd', now);
+        DefaultExt := '.chart';
+        if Execute then
+        begin
+            ServerApp.MustGetResult('MainSvc.SaveArchive',
+              SO(Format('[%s]', [escape_slash(fileName)])));
+        end;
+        Free;
+    end;
+end;
+
+procedure TFormBuckets.ToolButton4Click(Sender: TObject);
+begin
+    with TOpenDialog.Create(nil) do
+    begin
+        Filter := 'Файл архива графиков|*.chart';
+        Title := 'Открыть архива графиков';
+        // fileName := 'chart_'+FormatDateTime('dd_mmmm_dddd',now);
+        DefaultExt := '.chart';
+        if Execute then
+        begin
+            ServerApp.MustGetResult('MainSvc.OpenArchive',
+              SO(Format('[%s]', [escape_slash(fileName)])));
+            Label1.Visible := true;
+            Label1.Caption := fileName;
+            CreateYearsNodes;
+        end;
+        Free;
+    end;
 end;
 
 procedure TFormBuckets.TreeView1Change(Sender: TBaseVirtualTree;
@@ -132,7 +187,7 @@ begin
             FFormChartSeries.ListBox2.Items.Add(inttostr(i.AsInteger));
         end;
 
-        for i in ServerApp.MustGetResult('ChartSvc.Records',
+        for i in ServerApp.MustGetResult('ChartSvc.Points',
           SO(Format('{"BucketID":%d}', [TreeData[Node].Value]))) do
         begin
             j := i.AsArray;
@@ -272,7 +327,8 @@ var
     b: TBucket;
 begin
     for i in ServerApp.MustGetResult('ChartSvc.Buckets',
-      SO(Format('{"Year":%d, "Month":%d, "Day":%d}', [TreeData[ParentNode.Parent.Parent].Value,
+      SO(Format('{"Year":%d, "Month":%d, "Day":%d}',
+      [TreeData[ParentNode.Parent.Parent].Value,
       TreeData[ParentNode.Parent].Value, TreeData[ParentNode].Value]))) do
     begin
         Node := TreeView1.AddChild(ParentNode);
@@ -290,13 +346,6 @@ end;
 function TFormBuckets.GetTreeData(Node: PVirtualNode): PTreeData;
 begin
     Result := PTreeData(TreeView1.GetNodeData(Node));
-end;
-
-procedure TFormBuckets.ValidateData;
-begin
-    TreeView1.Clear;
-    CreateYearsNodes;
-
 end;
 
 end.
