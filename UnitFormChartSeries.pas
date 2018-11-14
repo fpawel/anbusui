@@ -195,11 +195,41 @@ begin
 end;
 
 procedure TFormChartSeries.FormCreate(Sender: TObject);
+var
+    c: TColor;
 begin
     FSeries := TDictionary<ProductVar, TFastLineSeries>.create;
     Chart1.title.visible := false;
     FChart1OriginalWndMethod := Chart1.WindowProc;
     Chart1.WindowProc := Chart1WndMethod;
+    SetLength(Chart1.ColorPalette, 12);
+
+    Chart1.ColorPalette[0] := clRed;
+    Chart1.ColorPalette[1] := clBlue;
+    Chart1.ColorPalette[2] := clGreen;
+    Chart1.ColorPalette[3] := clBlack;
+    Chart1.ColorPalette[4] := clFuchsia;
+    Chart1.ColorPalette[5] := clMaroon;
+    Chart1.ColorPalette[6] := clTeal;
+    Chart1.ColorPalette[7] := $FF8C00;
+    Chart1.ColorPalette[8] := clWebDarkGoldenRod;
+    Chart1.ColorPalette[9] := clWebIndigo;
+    Chart1.ColorPalette[10] := clWebDeepPink;
+    Chart1.ColorPalette[11] := clWebDarkSlateGray;
+
+    with Chart1.BottomAxis.Grid do
+    begin
+        Style := psDashDotDot;
+        Color := clGray;
+        Width := 0;
+    end;
+
+    with Chart1.LeftAxis.Grid do
+    begin
+        Style := psDashDotDot;
+        Color := clGray;
+        Width := 0;
+    end;
 
 end;
 
@@ -290,9 +320,9 @@ begin
     begin
         if not ser.Active then
             Continue;
-        Chart1.Canvas.Pen.color := ser.color;
+        Chart1.Canvas.Pen.Color := ser.Color;
         if ser.Tag > 0 then
-            Chart1.Canvas.Brush.color := ser.color;
+            Chart1.Canvas.Brush.Color := ser.Color;
 
         for i := ser.FirstValueIndex to ser.LastValueIndex do
         begin
@@ -340,7 +370,7 @@ begin
             end;
             if marker_place then
             begin
-                Chart1.Canvas.Font.color := ser.color;
+                Chart1.Canvas.Font.Color := ser.Color;
                 Chart1.Canvas.TextOut(marker_rect.Left, marker_rect.Top,
                   marker_text);
                 SetLength(marker_rects, length(marker_rects) + 1);

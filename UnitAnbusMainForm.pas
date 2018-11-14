@@ -129,7 +129,7 @@ uses serverapp_msg, rest.json, runhostapp, json, vclutils,
     model_config, PropertiesFormUnit,
     UnitFormReadVars, stringutils, model_network,
     richeditutils, UnitFormChartSeries, Unit1, superobject, ujsonrpc,
-    UnitFormBuckets, System.StrUtils, System.Types;
+    UnitFormBuckets, System.StrUtils, System.Types, VclTee.Chart;
 
 function CommandsFileName: string;
 begin

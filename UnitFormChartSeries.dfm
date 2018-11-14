@@ -22,8 +22,6 @@ object FormChartSeries: TFormChartSeries
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitTop = 5
-    ExplicitHeight = 665
   end
   object Panel4: TPanel
     Left = 995
@@ -33,8 +31,6 @@ object FormChartSeries: TFormChartSeries
     Align = alRight
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 5
-    ExplicitHeight = 665
   end
   object Panel8: TPanel
     Left = 0
@@ -53,8 +49,6 @@ object FormChartSeries: TFormChartSeries
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 3
-    ExplicitTop = 5
-    ExplicitHeight = 665
   end
   object Panel2: TPanel
     Left = 10
@@ -64,8 +58,6 @@ object FormChartSeries: TFormChartSeries
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 4
-    ExplicitTop = 5
-    ExplicitHeight = 665
     object Splitter1: TSplitter
       Left = 0
       Top = 305
@@ -120,7 +112,6 @@ object FormChartSeries: TFormChartSeries
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 2
-      ExplicitHeight = 355
       object ListBox2: TListBox
         Left = 0
         Top = 32
@@ -132,7 +123,6 @@ object FormChartSeries: TFormChartSeries
         MultiSelect = True
         TabOrder = 0
         OnClick = ListBox1Click
-        ExplicitHeight = 323
       end
       object Panel7: TPanel
         Left = 0
@@ -164,8 +154,6 @@ object FormChartSeries: TFormChartSeries
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 5
-    ExplicitTop = 5
-    ExplicitHeight = 665
     object Chart1: TChart
       Left = 0
       Top = 32
@@ -206,7 +194,6 @@ object FormChartSeries: TFormChartSeries
       BevelOuter = bvNone
       Color = clWindow
       TabOrder = 0
-      ExplicitHeight = 633
       DefaultCanvas = 'TGDIPlusCanvas'
       ColorPaletteIndex = 13
     end
@@ -391,7 +378,7 @@ object FormChartSeries: TFormChartSeries
     Left = 264
     Top = 146
     Bitmap = {
-      494C0101050024035C0319001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
+      494C010105002403600319001900FFFFFF002110FFFFFFFFFFFFFFFF424D3600
       000000000000360000002800000064000000320000000100200000000000204E
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
