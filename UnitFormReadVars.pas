@@ -249,7 +249,7 @@ var
     g: TStringGrid;
     ARow, ACol: Integer;
     v: Boolean;
-
+    addr, var_: Integer;
 begin
     g := Sender as TStringGrid;
     if (g.row > 0) AND (ord(Key) in [27, 32]) then
@@ -258,19 +258,27 @@ begin
           VarByIndex(row2var(g.Selection.Top))).ParentChart <> nil;
         for ARow := g.Selection.Top to g.Selection.Bottom do
             for ACol := g.Selection.Left to g.Selection.Right do
-                FormChartSeries.SetAddrVarSeries(AddrByIndex(col2place(ACol)),
-                  VarByIndex(row2var(ARow)), not v);
+            begin
+                addr := AddrByIndex(col2place(ACol));
+                var_ := VarByIndex(row2var(ARow));
+                if (addr >= 0) ANd (var_ >= 0) then
+                    FormChartSeries.SetAddrVarSeries(addr, var_, not v);
+            end;
+
     end;
 
     if ord(Key) = 24 then
     begin
         v := FormChartSeries.SeriesOf(AddrByIndex(col2place(1)),
           VarByIndex(row2var(1))).ParentChart <> nil;
-        for ARow := 1 to g.RowCount-1 do
-            for ACol := 1 to g.ColCount-1 do
-                FormChartSeries.SetAddrVarSeries(AddrByIndex(col2place(ACol)),
-                  VarByIndex(row2var(ARow)), not v);
-
+        for ARow := 1 to g.RowCount - 1 do
+            for ACol := 1 to g.ColCount - 1 do
+            begin
+                addr := AddrByIndex(col2place(ACol));
+                var_ := VarByIndex(row2var(ARow));
+                if (addr >= 0) ANd (var_ >= 0) then
+                    FormChartSeries.SetAddrVarSeries(addr, var_, not v);
+            end;
     end;
 
     if ord(Key) = 1 then
