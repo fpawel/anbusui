@@ -92,6 +92,8 @@ type
         { Private declarations }
         FhWndTip: THandle;
 
+        procedure AppException(Sender: TObject; E: Exception);
+
         procedure HandleNotifyText(t: TNotifyText);
 
         procedure SetStatusText(level: string; AText: string);
@@ -129,7 +131,7 @@ uses serverapp_msg, rest.json, runhostapp, json, vclutils,
     model_config, PropertiesFormUnit,
     UnitFormReadVars, stringutils, model_network,
     richeditutils, UnitFormChartSeries, Unit1, superobject, ujsonrpc,
-    UnitFormBuckets, System.StrUtils, System.Types, VclTee.Chart;
+    UnitFormBuckets, System.StrUtils, System.Types, VclTee.Chart, pipe;
 
 function CommandsFileName: string;
 begin
@@ -144,6 +146,7 @@ end;
 
 procedure TAnbusMainForm.FormCreate(Sender: TObject);
 begin
+    Application.OnException := AppException;
     ToolButtonConsoleHide.Click;
     if FileExists(CommandsFileName) then
         ComboBox1.Items.LoadFromFile(CommandsFileName);
@@ -468,6 +471,16 @@ begin
     if t.FKind = n_console then
         AddConsoleText(t.FLevel, t.FText);
 
+end;
+
+procedure TAnbusMainForm.AppException(Sender: TObject; E: Exception);
+begin
+    OutputDebugStringW(PWideChar(e.Message));
+    if e is EPipeBusy then
+    begin
+        exit;
+    end;
+    Application.ShowException(E);
 end;
 
 end.

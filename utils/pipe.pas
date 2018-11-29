@@ -14,6 +14,7 @@ type
         _hPipe: THANDLE; // дескриптор
         FName: string;
         FId:integer;
+        FBusy: boolean;
         procedure _ReadFile(var Buffer; numberOfbytesToRead: DWORD);
         procedure _WriteFile(var Buffer; numberOfbytesToWrite: DWORD);
         function _GetResponse(request: string): string;
@@ -23,7 +24,10 @@ type
         Constructor Create(AName: string);
         function GetResponse(const method: string;
             params: ISuperObject): IJsonRpcParsed;
+        property Busy: boolean read FBusy;
     end;
+
+    EPipeBusy = class(Exception);
 
 implementation
 
@@ -45,6 +49,7 @@ Constructor TPipe.Create(AName: string);
 begin
     FName := AName;
     FId := 0;
+    FBusy := false;
 end;
 
 procedure TPipe._WriteFile(var Buffer; numberOfbytesToWrite: DWORD);
@@ -93,23 +98,33 @@ var
 
     read_Buffer: TBytes;
 begin
+    if FBusy then
+        raise EPipeBusy.Create('pipe is busy');
+    FBusy := true;
     bytes_to_write := TEncoding.UTF8.GetBytes(request);
-    _WriteFile(bytes_to_write[0], length(bytes_to_write));
 
-    avail_count := 0;
-    while avail_count = 0 do
-        PeekNamedPipe(_hPipe, // _In_      HANDLE  hNamedPipe,
-          nil, // _Out_opt_ LPVOID  lpBuffer,
-          0, // _In_      DWORD   nBufferSize,
-          nil, // _Out_opt_ LPDWORD lpBytesRead,
-          @avail_count, // _Out_opt_ LPDWORD lpTotalBytesAvail,
-          nil // _Out_opt_ LPDWORD lpBytesLeftThisMessage
-          );
+    try
 
-    SetLength(read_Buffer, avail_count);
+        _WriteFile(bytes_to_write[0], length(bytes_to_write));
 
-    _ReadFile(read_Buffer[0], avail_count);
-    result := TEncoding.UTF8.GetString(read_Buffer);
+        avail_count := 0;
+        while avail_count = 0 do
+            PeekNamedPipe(_hPipe, // _In_      HANDLE  hNamedPipe,
+              nil, // _Out_opt_ LPVOID  lpBuffer,
+              0, // _In_      DWORD   nBufferSize,
+              nil, // _Out_opt_ LPDWORD lpBytesRead,
+              @avail_count, // _Out_opt_ LPDWORD lpTotalBytesAvail,
+              nil // _Out_opt_ LPDWORD lpBytesLeftThisMessage
+              );
+
+        SetLength(read_Buffer, avail_count);
+
+        _ReadFile(read_Buffer[0], avail_count);
+        result := TEncoding.UTF8.GetString(read_Buffer);
+    finally
+        FBusy := false;
+
+    end;
 end;
 
 function TPipe.GetResponse( const method: string;
