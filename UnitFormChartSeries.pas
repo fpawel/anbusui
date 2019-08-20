@@ -9,7 +9,7 @@ uses
     VclTee.TeeProcs, VclTee.Chart, Vcl.StdCtrls, Vcl.ExtCtrls,
     System.Generics.collections, System.Generics.Defaults,
     VclTee.Series, Vcl.ComCtrls,
-    Vcl.ToolWin, System.ImageList, Vcl.ImgList, Vcl.CheckLst, superobject;
+    Vcl.ToolWin, System.ImageList, Vcl.ImgList, Vcl.CheckLst;
 
 type
     ProductVar = record
@@ -52,7 +52,6 @@ type
         procedure Chart1UndoZoom(Sender: TObject);
         procedure Memo2MouseMove(Sender: TObject; Shift: TShiftState;
           X, Y: integer);
-        procedure ToolButton4Click(Sender: TObject);
     private
         { Private declarations }
         FSeries: TDictionary<ProductVar, TFastLineSeries>;
@@ -84,8 +83,6 @@ type
 
         procedure ChangeAxisOrder(c: TWinControl; WheelDelta: integer);
 
-        function DeleteRequest: TArray<string>;
-
     end;
 
 var
@@ -96,7 +93,7 @@ implementation
 {$R *.dfm}
 
 uses stringutils, dateutils, StrUtils, math, System.Types, vclutils,
-    UnitServerApp, UnitAnbusMainForm, ComponentBaloonHintU;
+    ComponentBaloonHintU, app;
 
 function pow2(X: Extended): Extended;
 begin
@@ -133,16 +130,7 @@ begin
     exit(-1);
 end;
 
-// procedure Chart_DrawCrossHair(Chart: TChart; ax, ay: integer; color: TColor);
-// begin
-// Chart.Canvas.Brush.color := Chart.BackColor;
-// Chart.Canvas.Pen.Style := psSolid;
-// Chart.Canvas.Pen.Width := 1;
-// Chart.Canvas.Pen.color := color;
-// Chart.Canvas.MoveTo(Chart.ChartRect.Left + Chart.Width3D, ay);
-// Chart.Canvas.LineTo(ax, ay);
-// Chart.Canvas.LineTo(ax, Chart.ChartRect.Bottom - Chart.Height3D);
-// end;
+
 
 function CompareStrInt(List: TStringList; Index1, Index2: integer): integer;
 var
@@ -170,28 +158,33 @@ begin
     sl.Free;
 end;
 
+
+procedure AddVarListBox(AListbox: TListBox; nvar: integer);
+var
+    n: integer;
+
+begin
+    if AListbox.Items.IndexOf(AppVarName(nvar)) > -1 then
+        exit;
+    n := AListbox.Items.Add(AppVarName(nvar));
+    AListbox.Selected[n] := true;
+    if Assigned( AListbox.OnClick ) then
+        AListbox.OnClick(AListbox);
+
+end;
+
 procedure AddStrIntListBox(AListbox: TListBox; new_item: integer);
 var
-    n, i: integer;
-    selected_items: TDictionary<string, integer>;
+    n: integer;
+
 begin
     if AListbox.Items.IndexOf(inttostr(new_item)) > -1 then
         exit;
     n := AListbox.Items.Add(inttostr(new_item));
-    if n = 0 then
-        AListbox.Selected[n] := true;
+    AListbox.Selected[n] := true;
+    if Assigned( AListbox.OnClick ) then
+        AListbox.OnClick(AListbox);
 
-    selected_items := TDictionary<string, integer>.create;
-
-    for i := 0 to AListbox.Items.Count - 1 do
-        if AListbox.Selected[i] then
-            selected_items.AddOrSetValue(AListbox.Items[i], 0);
-
-    sortListBox(AListbox);
-    for i := 0 to AListbox.Items.Count - 1 do
-        AListbox.Selected[i] := selected_items.ContainsKey(AListbox.Items[i]);
-
-    selected_items.Free;
 end;
 
 procedure TFormChartSeries.FormCreate(Sender: TObject);
@@ -253,7 +246,7 @@ begin
                 if ListBox2.Selected[j] then
                 begin
                     k.Addr := strtoint(ListBox2.Items[j]);
-                    k.VarID := strtoint(ListBox1.Items[i]);
+                    k.VarID := AppVarCode(ListBox1.Items[i]);
                     SetLength(xs, length(xs) + 1);
                     xs[length(xs) - 1] := k;
                 end;
@@ -422,7 +415,7 @@ begin
     begin
         Result := TFastLineSeries.create(nil);
         Result.XValues.DateTime := true;
-        Result.title := inttostr3(Addr) + ':' + inttostr(var_id);
+        Result.title := inttostr2(Addr) + ':' + AppVarName(var_id);
         FSeries.Add(k, Result);
     end;
 
@@ -434,7 +427,7 @@ var
     ser: TFastLineSeries;
     n, i: integer;
 begin
-    AddStrIntListBox(ListBox1, var_id);
+    AddVarListBox(ListBox1, var_id);
     AddStrIntListBox(ListBox2, Addr);
 
     ser := SeriesOf(Addr, var_id);
@@ -474,53 +467,6 @@ begin
     Chart1.Repaint;
 end;
 
-procedure TFormChartSeries.ToolButton4Click(Sender: TObject);
-var
-    s: string;
-    params: ISuperObject;
-    i: TPair<ProductVar, TFastLineSeries>;
-    n, Count, tot_chart, tot_db: integer;
-    res: ISuperObject;
-begin
-
-    tot_chart := 0;
-    for i in FSeries do
-    begin
-        if i.value.Active and Assigned(i.value.ParentChart) then
-        begin
-            Count := i.value.Count;
-            n := 0;
-            while n < Count do
-            begin
-                if (i.value.XValues[n] >= Chart1.BottomAxis.Minimum) AND
-                  (i.value.XValues[n] <= Chart1.BottomAxis.Maximum) AND
-                  (i.value.YValues[n] >= Chart1.LeftAxis.Minimum) AND
-                  (i.value.YValues[n] <= Chart1.LeftAxis.Maximum) then
-                begin
-                    i.value.Delete(n);
-                    Count := Count - 1;
-                    tot_chart := tot_chart + 1;
-                end
-                else
-                    n := n + 1;
-            end;
-        end;
-    end;
-
-    tot_db := 0;
-    for s in DeleteRequest do
-    begin
-        params := SO(s);
-        res := ServerApp.MustGetResult('ChartSvc.DeletePoints', params);
-        tot_db := tot_db + res.AsInteger;
-
-    end;
-    AnbusMainForm.NewBallonTip(ToolBar2, TIconKind.Info, 'Удаление точек',
-      Format('%d сохранённых точек удалено'#13'%d точек графика удалено',
-      [tot_db, tot_chart]));
-
-end;
-
 function TFormChartSeries.GetActiveSeries: TFastLineSeries;
 var
     i: TPair<ProductVar, TFastLineSeries>;
@@ -534,24 +480,31 @@ end;
 
 procedure TFormChartSeries.ShowCurrentScaleValues;
 var
-    s: string;
+    s, s1, s2, s3: string;
     v: double;
 begin
+
     with Chart1.Axes.Bottom do
     begin
         v := Maximum - Minimum;
+
+        s1 := TimetoStr(Minimum);
+        s2 := TimetoStr(Maximum);
+        s3 := TimetoStr(v);
+
+
         if v = 0 then
             s := 'нет значений'
         else if v < IncSecond(0, 1) then
-            s := inttostr(MilliSecondsBetween(Minimum, Maximum)) + 'мс'
+            s := inttostr(MilliSecondsBetween(Maximum, Minimum )) + 'мс'
         else if v < IncMinute(0, 1) then
-            s := inttostr(SecondsBetween(Minimum, Maximum)) + ' c'
+            s := inttostr(SecondsBetween(Maximum, Minimum)) + ' c'
         else if v < Inchour(0, 1) then
-            s := inttostr(minutesBetween(Minimum, Maximum)) + ' минут'
+            s := inttostr(minutesBetween(Maximum, Minimum)) + ' минут'
         else if v < Incday(0, 1) then
-            s := inttostr(hoursBetween(Minimum, Maximum)) + ' часов'
+            s := inttostr(hoursBetween(Maximum, Minimum)) + ' часов'
         else
-            s := inttostr(daysBetween(Minimum, Maximum)) + ' дней';
+            s := inttostr(daysBetween(Maximum, Minimum)) + ' дней';
 
     end;
     Memo1.Text := Format('X: %s', [s]);
@@ -586,7 +539,7 @@ begin
     ser := SeriesOf(Addr, var_id);
     if visible then
     begin
-        AddStrIntListBox(ListBox1, var_id);
+        AddVarListBox(ListBox1, var_id);
         AddStrIntListBox(ListBox2, Addr);
         ser.ParentChart := Chart1;
         ser.Active := true;
@@ -646,26 +599,5 @@ begin
       [Y, mo, d, h, mn, s, ml]);
 end;
 
-function TFormChartSeries.DeleteRequest: TArray<string>;
-const
-    fmt = '{"FileName":"%s","BucketID":%d, "Addr":%d, "Var":%d, "ValueMinimum":%s, "ValueMaximum":%s, "TimeMinimum":%s, "TimeMaximum":%s}';
-var
-    i: TPair<ProductVar, TFastLineSeries>;
-begin
-    for i in FSeries do
-    begin
-        if i.value.Active and Assigned(i.value.ParentChart) then
-        begin
-            SetLength(Result, length(Result) + 1);
-            Result[length(Result) - 1] :=
-              Format(fmt, [FFileName, FBucketID, i.Key.Addr, i.Key.VarID,
-              float_to_str(Chart1.LeftAxis.Minimum),
-              float_to_str(Chart1.LeftAxis.Maximum),
-              time_to_json(Chart1.BottomAxis.Minimum),
-              time_to_json(Chart1.BottomAxis.Maximum)]);
-        end;
-    end;
-
-end;
 
 end.

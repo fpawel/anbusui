@@ -7,32 +7,17 @@ uses
     System.Classes, Vcl.Graphics,
     Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Menus, Vcl.ComCtrls,
     Vcl.ToolWin, Vcl.ExtCtrls, Vcl.Grids, System.ImageList, Vcl.ImgList,
-    UnitServerApp, ComponentBaloonHintU;
+    ComponentBaloonHintU, server_data_types;
 
 type
-    THostAppCommand = (cmdNotifyText, cmdReadVar);
 
-    TPlace = class
-        FAddr: integer;
-        FUnchecked: boolean;
-    end;
-
-    TVar = class
-        FVar: integer;
-        FUnchecked: boolean;
-    end;
-
-    TNotifyText = class
-        FText: string;
-        FLevel: string;
-        FKind: string;
-    end;
+    EHostApplicationPanic = class(Exception);
 
     TAnbusMainForm = class(TForm)
         ImageList4: TImageList;
         PageControlMain: TPageControl;
         TabSheetVars: TTabSheet;
-        TabSheetArchive: TTabSheet;
+        TabSheetCharts: TTabSheet;
         Panel14: TPanel;
         Panel4: TPanel;
         PopupMenu1: TPopupMenu;
@@ -46,7 +31,6 @@ type
         N7: TMenuItem;
         Panel2: TPanel;
         PanelInput: TPanel;
-        RichEdit1: TRichEdit;
         PanelNetwork: TPanel;
         Splitter1: TSplitter;
         Panel5: TPanel;
@@ -62,16 +46,14 @@ type
         ToolButton5: TToolButton;
         ToolButton6: TToolButton;
         ImageList1: TImageList;
-        ComboBox1: TComboBox;
         ToolButton1: TToolButton;
-    ToolButton2: TToolButton;
+        ToolButton2: TToolButton;
+        ToolButton7: TToolButton;
         procedure FormCreate(Sender: TObject);
         procedure PageControlMainDrawTab(Control: TCustomTabControl;
           TabIndex: integer; const Rect: TRect; Active: boolean);
         procedure PageControlMainChange(Sender: TObject);
         procedure FormShow(Sender: TObject);
-        procedure ComboBox1KeyDown(Sender: TObject; var Key: Word;
-          Shift: TShiftState);
         procedure ToolButtonConsoleHideClick(Sender: TObject);
         procedure ToolButton4MouseMove(Sender: TObject; Shift: TShiftState;
           X, Y: integer);
@@ -84,17 +66,12 @@ type
         procedure FormClose(Sender: TObject; var Action: TCloseAction);
         procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
           WheelDelta: integer; MousePos: TPoint; var Handled: boolean);
-        procedure RichEdit1MouseDown(Sender: TObject; Button: TMouseButton;
-          Shift: TShiftState; X, Y: integer);
-        procedure ToolButton1Click(Sender: TObject);
-    procedure ToolButton2Click(Sender: TObject);
+        procedure ToolButton7Click(Sender: TObject);
     private
         { Private declarations }
         FhWndTip: THandle;
 
         procedure AppException(Sender: TObject; E: Exception);
-
-        procedure HandleNotifyText(t: TNotifyText);
 
         procedure SetStatusText(level: string; AText: string);
 
@@ -107,8 +84,6 @@ type
 
     public
         { Public declarations }
-        procedure AddConsoleText(level: string; AText: string);
-
         procedure NewBallonTip(c: TWinControl; Icon: TIconKind;
           const Title, Text: string);
 
@@ -127,173 +102,42 @@ implementation
 
 {$R *.dfm}
 
-uses serverapp_msg, rest.json, runhostapp, json, vclutils,
-    model_config, PropertiesFormUnit,
-    UnitFormReadVars, stringutils, model_network,
-    richeditutils, UnitFormChartSeries, Unit1, superobject, ujsonrpc,
-    UnitFormBuckets, System.StrUtils, System.Types, VclTee.Chart, pipe;
+uses vclutils,
 
-function CommandsFileName: string;
-begin
-    result := ExtractFilePath(ParamStr(0)) + '\commands.txt'
-end;
-
-procedure TAnbusMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-    if ParamStr(1) = '-must-close-server' then
-        SendMessage(FindWindow('AnbusServerAppWindow', nil), WM_CLOSE, 0, 0);
-end;
+    JclDebug, UnitFormReadVars, stringutils,
+    richeditutils, Unit1, superobject, ujsonrpc,
+    UnitFormChartSeries, System.StrUtils, System.Types, VclTee.Chart,
+    UnitFormPopup, notify_services, UnitFormCharts, app, services,
+    HttpRpcClient,
+    HttpExceptions;
 
 procedure TAnbusMainForm.FormCreate(Sender: TObject);
 begin
+    HttpRpcClient.HttpHostAddr := app.GetAppHttpAddr;
     Application.OnException := AppException;
     ToolButtonConsoleHide.Click;
-    if FileExists(CommandsFileName) then
-        ComboBox1.Items.LoadFromFile(CommandsFileName);
-end;
 
-procedure TAnbusMainForm.FormMouseWheel(Sender: TObject; Shift: TShiftState;
-  WheelDelta: integer; MousePos: TPoint; var Handled: boolean);
-begin
-    FormChartSeries.ChangeAxisOrder(GetVCLControlAtPos(self, MousePos),
-      WheelDelta);
-end;
-
-procedure TAnbusMainForm.ComboBox1KeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
-var
-    r: IJsonRpcParsed;
-    t: TJsonRpcObjectType;
-    words: System.Types.TStringDynArray;
-    I: integer;
-    s: string;
-begin
-    with ComboBox1 do
-        case Key of
-
-            VK_DELETE:
-                begin
-                    if (ssCtrl in Shift) and (Items.IndexOf(ComboBox1.Text) > -1)
-                    then
-                    begin
-                        Key := 0;
-                        Items.delete(Items.IndexOf(ComboBox1.Text));
-                        Items.SaveToFile(CommandsFileName);
-                        ComboBox1.Text := '';
-                    end;
-
-                end;
-            VK_RETURN:
-                begin
-                    Text := Trim(Text);
-                    if Text <> '' then
-                    begin
-                        words := SplitString(Text, ' ');
-
-                        if (Length(words) > 1) AND (words[0] = 'call') then
-                        begin
-                            if Length(words) = 2 then
-                                r := ServerApp.GetResponse(words[1], SO('{}'))
-                            else
-                            begin
-                                s := words[2];
-                                for I := 3 to Length(words) - 1 do
-                                    s := s + ' ' + words[I];
-                                r := ServerApp.GetResponse(words[1], SO(s));
-                            end;
-
-                        end
-                        else
-                            r := ServerApp.GetResponse('MainSvc.PerformTextCommand',
-                              SO(Format('["%s"]', [Text])));
-                        t := r.GetMessageType;
-                        if t = jotError then
-                        begin
-                            CloseWindow(FhWndTip);
-                            FhWndTip := ComboBox1.ShowBalloonTip
-                              (TIconKind.Error, 'Ошибка ввода',
-                              r.GetMessagePayload.AsJsonObject['error']
-                              ['message'].AsString);
-                        end;
-
-                        if words[0] = 'call' then
-                            RichEdit1.Text := r.GetMessagePayload.AsJSon
-                              (true, true);
-
-                        if Items.IndexOf(Text) > -1 then
-                            Items.Exchange(Items.IndexOf(Text), 0)
-                        else
-                            Items.insert(0, Text);
-                        Items.SaveToFile(CommandsFileName);
-                        Text := '';
-                    end;
-                    Key := 0;
-                end;
-
-        end;
-end;
-
-procedure TAnbusMainForm.NewBallonTip(c: TWinControl; Icon: TIconKind;
-  const Title, Text: string);
-begin
-    CloseWindow(FhWndTip);
-    FhWndTip := c.ShowBalloonTip(Icon, Title, Text);
-
-end;
-
-procedure TAnbusMainForm.HandleCopydata(var Message: TMessage);
-var
-    cd: PCOPYDATASTRUCT;
-    cmd: THostAppCommand;
-    response: TObject;
-    read_var: TReadVar;
-begin
-    cd := PCOPYDATASTRUCT(Message.LParam);
-    cmd := THostAppCommand(Message.WParam);
-
-    Message.result := 1;
-
-    case cmd of
-        cmdReadVar:
-            begin
-                read_var := TJson.JsonToObject<TReadVar>(StrFromCopydata(cd));
-                FormReadVars.HandleReadVar(read_var);
-                if read_var.FError = '' then
-                begin
-                    SetStatusText(n_info,
-                      Format('%s: %g',
-                      [FormReadVars.FormatAddrPlace(read_var.FPlace,
-                      read_var.FVarIndex), read_var.FValue]));
-                end
-                else
-                begin
-                    SetStatusText(n_err,
-                      Format('%s: %s',
-                      [FormReadVars.FormatAddrPlace(read_var.FPlace,
-                      read_var.FVarIndex), read_var.FError]));
-                end;
-                read_var.Free;
-            end;
-
-        cmdNotifyText:
-            HandleNotifyText(TJson.JsonToObject<TNotifyText>
-              (StrFromCopydata(cd)));
-
-    end;
 end;
 
 procedure TAnbusMainForm.FormShow(Sender: TObject);
+var
+    FileName: String;
+    wp: WINDOWPLACEMENT;
+    fs: TFileStream;
 begin
-    OnShow := nil;
 
-    with PropertiesForm do
+    AppVars := TConfigSvc.vars;
+
+    FileName := ChangeFileExt(paramstr(0), '.position');
+    if FileExists(FileName) then
     begin
-        Font.Assign(self.Font);
-//        BorderStyle := bsNone;
-//        Align := alClient;
-//        Parent := PanelConfig;
-//        Show;
+        fs := TFileStream.Create(FileName, fmOpenRead);
+        fs.Read(wp, SizeOf(wp));
+        fs.Free;
+        SetWindowPlacement(Handle, wp);
     end;
+
+    OnShow := nil;
 
     with FormReadVars do
     begin
@@ -315,40 +159,72 @@ begin
         NewChart;
     end;
 
-    with FormBuckets do
+    with FormCharts do
     begin
-        Parent := TabSheetArchive;
+        Parent := TabSheetCharts;
         Align := alClient;
         BorderStyle := bsNone;
         Visible := true;
         Font.Assign(self.Font);
     end;
+    FormReadVars.UpdateNetwork;
+    NotifyServices_SetEnabled(true);
+end;
 
-    FormReadVars.UpdateNetwork('SetsSvc.Network');
+procedure TAnbusMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
+var
+    wp: WINDOWPLACEMENT;
+    fs: TFileStream;
+begin
+    NotifyServices_SetEnabled(false);
+    HttpRpcClient.TIMEOUT_CONNECT := 10;
+    try
+        TPeerSvc.Close;
+    except
+        on ERpcNoResponseException do
+            exit;
+    end;
 
-    PropertiesForm.SetConfig(TJson.JsonToObject<TConfig>
-      (ServerApp.MustGetResult('SetsSvc.UserConfig', SO('{}')).AsString));
+    fs := TFileStream.Create(ChangeFileExt(paramstr(0), '.position'),
+      fmOpenWrite or fmCreate);
+    if not GetWindowPlacement(Handle, wp) then
+        raise Exception.Create('GetWindowPlacement: false');
+    fs.Write(wp, SizeOf(wp));
+    fs.Free;
 
+end;
+
+procedure TAnbusMainForm.FormMouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: integer; MousePos: TPoint; var Handled: boolean);
+begin
+    FormChartSeries.ChangeAxisOrder(GetVCLControlAtPos(self, MousePos),
+      WheelDelta);
+end;
+
+procedure TAnbusMainForm.NewBallonTip(c: TWinControl; Icon: TIconKind;
+  const Title, Text: string);
+begin
+    CloseWindow(FhWndTip);
+    FhWndTip := c.ShowBalloonTip(Icon, Title, Text);
+
+end;
+
+procedure TAnbusMainForm.HandleCopydata(var Message: TMessage);
+begin
+    notify_services.HandleCopydata(Message);
 end;
 
 procedure TAnbusMainForm.PageControlMainChange(Sender: TObject);
 begin
     (Sender as TPageControl).Repaint;
-    if FormBuckets.TreeView1.IsEmpty then
-        FormBuckets.CreateYearsNodes;
+    if PageControlMain.ActivePage = TabSheetCharts then
+        FormCharts.FetchYearsMonths;
 end;
 
 procedure TAnbusMainForm.PageControlMainDrawTab(Control: TCustomTabControl;
   TabIndex: integer; const Rect: TRect; Active: boolean);
 begin
     PageControl_DrawVerticalTab(Control, TabIndex, Rect, Active);
-end;
-
-procedure TAnbusMainForm.RichEdit1MouseDown(Sender: TObject;
-  Button: TMouseButton; Shift: TShiftState; X, Y: integer);
-begin
-    if Button = TMouseButton.mbRight then
-        RichEdit_PopupMenu(RichEdit1);
 end;
 
 procedure TAnbusMainForm.WMEnterSizeMove(var Msg: TMessage);
@@ -369,26 +245,14 @@ begin
     inherited;
 end;
 
-procedure TAnbusMainForm.ToolButton1Click(Sender: TObject);
-begin
-    RichEdit1.Text := '';
-end;
-
-procedure TAnbusMainForm.ToolButton2Click(Sender: TObject);
-begin
-    PropertiesForm.Position := TPosition.poScreenCenter;
-    PropertiesForm.Show;
-
-end;
-
 procedure TAnbusMainForm.ToolButton3Click(Sender: TObject);
 begin
-    FormReadVars.UpdateNetwork('SetsSvc.AddPlace');
+    FormReadVars.SetNetwork(TConfigSvc.AddPlace);
 end;
 
 procedure TAnbusMainForm.ToolButton4Click(Sender: TObject);
 begin
-    FormReadVars.UpdateNetwork('SetsSvc.DelPlace');
+    FormReadVars.SetNetwork(TConfigSvc.DelPlace);
 end;
 
 procedure TAnbusMainForm.ToolButton4MouseMove(Sender: TObject;
@@ -404,12 +268,12 @@ end;
 
 procedure TAnbusMainForm.ToolButton5Click(Sender: TObject);
 begin
-    FormReadVars.UpdateNetwork('SetsSvc.AddVar');
+    FormReadVars.SetNetwork(TConfigSvc.AddVar);
 end;
 
 procedure TAnbusMainForm.ToolButton6Click(Sender: TObject);
 begin
-    FormReadVars.UpdateNetwork('SetsSvc.DelVar');
+    FormReadVars.SetNetwork(TConfigSvc.DelVar);
 end;
 
 procedure TAnbusMainForm.ToolButton6MouseMove(Sender: TObject;
@@ -419,6 +283,24 @@ begin
     begin
         ToolButton6.Hint := 'Удалить регистр ' + Cells[0, rowcount - 1];
 
+    end;
+end;
+
+procedure TAnbusMainForm.ToolButton7Click(Sender: TObject);
+var
+    pt: TPoint;
+begin
+    GetCursorPos(pt);
+    with FormPopup do
+    begin
+        RichEdit1.Font.Color := clNavy;
+        RichEdit1.Text :=
+          '- [B1] [код команды] [байты данных в HEX через пробел] : отправка запроса MODBUS c контрольной суммой'#13
+          + #10'B1 - адрес MODBUS или ALL'#13 +
+          '- [B1] W32 [код команды 32] [аргумент float] : запись в регистр 32';
+        Left := pt.X + 5;
+        Top := pt.Y + 5;
+        Show;
     end;
 end;
 
@@ -451,36 +333,66 @@ begin
     PanelStatus.Caption := '    ' + AText;
 end;
 
-procedure TAnbusMainForm.AddConsoleText(level: string; AText: string);
-begin
-    with RichEdit1 do
-    begin
-        SendMessage(Handle, EM_SCROLL, SB_LINEDOWN, 0);
-        SelStart := Length(RichEdit1.Text);
-        if level = n_info then
-            RichEdit_AddText(RichEdit1, clBlack, AText)
-        else
-            RichEdit_AddText2(RichEdit1, clRed, cl3dLight, AText);
-        SendMessage(Handle, EM_SCROLL, SB_LINEDOWN, 0);
-    end;
-end;
-
-procedure TAnbusMainForm.HandleNotifyText(t: TNotifyText);
-begin
-    SetStatusText(t.FLevel, t.FText);
-    if t.FKind = n_console then
-        AddConsoleText(t.FLevel, t.FText);
-
-end;
-
 procedure TAnbusMainForm.AppException(Sender: TObject; E: Exception);
+var
+    stackList: TJclStackInfoList; // JclDebug.pas
+    sl: TStringList;
+    stacktrace: string;
+
+    FErrorLog: TextFile;
+    ErrorLogFileName: string;
 begin
-    OutputDebugStringW(PWideChar(e.Message));
-    if e is EPipeBusy then
+
+    stackList := JclCreateStackList(false, 0, Caller(0, false));
+    sl := TStringList.Create;
+    stackList.AddToStrings(sl, true, false, true, false);
+    stacktrace := sl.Text;
+    sl.Free;
+    stackList.Free;
+    OutputDebugStringW(PWideChar(E.Message + #10#13 + stacktrace));
+
+    ErrorLogFileName := ChangeFileExt(paramstr(0), '.log');
+    AssignFile(FErrorLog, ErrorLogFileName, CP_UTF8);
+    if FileExists(ErrorLogFileName) then
+        Append(FErrorLog)
+    else
+        Rewrite(FErrorLog);
+
+    Writeln(FErrorLog, FormatDateTime('dd/MM/yy hh:nn:ss', now), ' ',
+      'delphi_exception', ' ', E.ClassName, ' ', stringreplace(Trim(E.Message),
+      #13, ' ', [rfReplaceAll, rfIgnoreCase]));
+
+    Writeln(FErrorLog, StringOfChar('-', 120));
+
+    Writeln(FErrorLog, stringreplace(Trim(stacktrace), #13, ' ',
+      [rfReplaceAll, rfIgnoreCase]));
+
+    Writeln(FErrorLog, StringOfChar('-', 120));
+
+    CloseFile(FErrorLog);
+
+    if E is EHostApplicationPanic then
     begin
+        Application.ShowException(E);
+        Application.Terminate;
         exit;
     end;
-    Application.ShowException(E);
+
+    if MessageDlg(E.Message, mtError, [mbAbort, mbIgnore], 0) = mrAbort then
+    begin
+        NotifyServices_SetEnabled(false);
+        HttpRpcClient.TIMEOUT_CONNECT := 10;
+        try
+            TPeerSvc.Close;
+        except
+            on ERpcNoResponseException do
+                exit;
+        end;
+
+        Application.OnException := nil;
+        Application.Terminate;
+        exit;
+    end;
 end;
 
 end.

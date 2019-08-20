@@ -6,7 +6,7 @@ uses
     Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
     System.Classes, Vcl.Graphics,
     Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Grids,
-    Vcl.ExtCtrls, System.Generics.collections, model_network;
+    Vcl.ExtCtrls, System.Generics.collections, server_data_types;
 
 type
     TStringGridEx = class helper for TStringGrid
@@ -36,10 +36,9 @@ type
         FPlace: Integer;
         FVarIndex: Integer;
         FErrors: TDictionary<string, string>;
-        FNetwork: TNetwork;
+        FNetwork: TConfigNetwork;
         FInitialized: Boolean;
 
-        procedure SetRowChecked(row: Integer; v: Boolean);
         procedure ToggleRowChecked(row: Integer);
         procedure ToggleColChecked(col: Integer);
 
@@ -51,11 +50,11 @@ type
 
         function FormatAddrPlace(place, varindex: Integer): string;
 
-        procedure SetNetwork(ANetwork: TNetwork);
+        procedure SetNetwork(ANetwork: TConfigNetwork);
         procedure HandleReadVar(X: TReadVar);
         procedure reset;
 
-        procedure UpdateNetwork(const method: string);
+        procedure UpdateNetwork;
     end;
 
 var
@@ -65,9 +64,8 @@ implementation
 
 {$R *.dfm}
 
-uses stringgridutils, rest.json, stringutils, UnitFormPopup, UnitServerApp,
-    serverapp_msg,
-    UnitFormChartSeries, ujsonrpc, superobject, pipe;
+uses stringgridutils, rest.json, stringutils, UnitFormPopup,
+    UnitFormChartSeries, ujsonrpc, superobject, services;
 
 function TStringGridEx.GetInplaceEditor: TInplaceEdit;
 begin
@@ -132,7 +130,7 @@ var
     requestObj: TJsonRpcMessage;
 
     response: IJsonRpcParsed;
-    network: TNetwork;
+    network: TConfigNetwork;
     str_response: string;
 begin
 
@@ -144,7 +142,7 @@ begin
 
         if (ACol = 0) AND (ARow = 0) then
         begin
-            UpdateNetwork('SetsSvc.Toggle');
+            SetNetwork(TConfigSvc.ToggleNetwork);
             exit;
         end;
 
@@ -193,11 +191,11 @@ begin
 
     Checked_row := false;
     if var_ind > -1 then
-        Checked_row := not FNetwork.FVars[var_ind].FUnchecked;
+        Checked_row := FNetwork.Vars[var_ind].Check;
 
     Checked_col := false;
     if place > -1 then
-        Checked_col := not FNetwork.FPlaces[place].FUnchecked;
+        Checked_col := FNetwork.Places[place].Check;
 
     if (ACol = 0) or (ARow = 0) then
         cnv.Brush.Color := cl3DLight
@@ -280,15 +278,6 @@ begin
                     FormChartSeries.SetAddrVarSeries(addr, var_, not v);
             end;
     end;
-
-    if ord(Key) = 1 then
-    begin
-        v := FNetwork.FVars[row2var(1)].FUnchecked;
-        for ARow := 1 to StringGrid1.RowCount - 1 do
-            SetRowChecked(ARow, not v);
-
-    end;
-
 end;
 
 procedure TFormReadVars.StringGrid1MouseDown(Sender: TObject;
@@ -411,20 +400,17 @@ begin
             begin
 
                 if TryStrToInt(Value, n) and (n > 0) and (n < 256) then
-                    ServerApp.GetResponse('SetsSvc.SetAddr',
-                      SO(Format('{"place": %d, "addr":%d}',
-                      [col2place(ACol), n])))
+                    TConfigSvc.SetAddr(col2place(ACol), n)
                 else
-                    UpdateNetwork('SetsSvc.Network');
+                    UpdateNetwork;
             end;
 
             if ACol = 0 then
             begin
                 if TryStrToInt(Value, n) and (n > -1) then
-                    ServerApp.GetResponse('SetsSvc.SetVar',
-                      SO(Format('{"index":%d,"var":%d}', [row2var(ARow), n])))
+                    TConfigSvc.SetVar(row2var(ARow), n)
                 else
-                    UpdateNetwork('SetsSvc.Network');
+                    UpdateNetwork;
             end;
         end
         else
@@ -436,18 +422,10 @@ begin
 
 end;
 
-procedure TFormReadVars.SetNetwork(ANetwork: TNetwork);
+procedure TFormReadVars.SetNetwork(ANetwork: TConfigNetwork);
 var
     ACol, ARow, place, varInd: Integer;
 begin
-    if Assigned(FNetwork) then
-    begin
-        for place := 0 to Length(FNetwork.FPlaces) - 1 do
-            FNetwork.FPlaces[place].Free;
-        for varInd := 0 to Length(FNetwork.FVars) - 1 do
-            FNetwork.FVars[varInd].Free;
-        FNetwork.Free;
-    end;
 
     FNetwork := ANetwork;
     FErrors.Clear;
@@ -456,21 +434,21 @@ begin
     begin
         EditorMode := false;
         Options := Options - [goEditing];
-        RowCount := Length(FNetwork.FVars) + 1;
+        RowCount := Length(FNetwork.Vars) + 1;
         // FixedRows := 1;
-        ColCount := Length(FNetwork.FPlaces) + 1;
+        ColCount := Length(FNetwork.Places) + 1;
         Cells[0, 0] := '№';
         Cells[1, 0] := 'Параметр';
-        for varInd := 0 to Length(FNetwork.FVars) - 1 do
+        for varInd := 0 to Length(FNetwork.Vars) - 1 do
         begin
             ARow := var2row(varInd);
-            Cells[0, ARow] := inttostr(FNetwork.FVars[varInd].FVar);
+            Cells[0, ARow] := inttostr(FNetwork.Vars[varInd].Code);
         end;
 
-        for place := 0 to Length(FNetwork.FPlaces) - 1 do
+        for place := 0 to Length(FNetwork.Places) - 1 do
         begin
             ACol := place2col(place);
-            Cells[ACol, 0] := inttostr(FNetwork.FPlaces[place].FAddr);
+            Cells[ACol, 0] := inttostr(FNetwork.Places[place].Addr);
         end;
     end;
     StringGrid_Redraw(StringGrid1);
@@ -504,20 +482,20 @@ begin
         exit;
     prev_place := FPlace;
     prev_var := FVarIndex;
-    FPlace := X.FPlace;
-    FVarIndex := X.FVarIndex;
-    if X.FError <> '' then
+    FPlace := X.Place;
+    FVarIndex := X.VarIndex;
+    if X.Error <> '' then
     begin
-        FErrors.AddOrSetValue(pvk(FPlace, FVarIndex), X.FError);
-        StringGrid1.Cells[place2col(FPlace), var2row(FVarIndex)] := X.FError;
+        FErrors.AddOrSetValue(pvk(FPlace, FVarIndex), X.Error);
+        StringGrid1.Cells[place2col(FPlace), var2row(FVarIndex)] := X.Error;
     end
     else
     begin
         FErrors.Remove(pvk(FPlace, FVarIndex));
         StringGrid1.Cells[place2col(FPlace), var2row(FVarIndex)] :=
-          floattostr(X.FValue);
-        FormChartSeries.AddValue(AddrByIndex(X.FPlace), VarByIndex(X.FVarIndex),
-          X.FValue, now);
+          floattostr(X.Value);
+        FormChartSeries.AddValue(AddrByIndex(X.Place), VarByIndex(X.VarIndex),
+          X.Value, now);
     end;
 
     if (prev_place >= 0) and (prev_var >= 0) then
@@ -530,8 +508,8 @@ begin
 
     prev_place_err := FErrors.ContainsKey(plk(FPlace));
 
-    if Pos('нет ответа', LowerCase(X.FError)) > 0 then
-        FErrors.AddOrSetValue(plk(FPlace), X.FError)
+    if Pos('нет ответа', LowerCase(X.Error)) > 0 then
+        FErrors.AddOrSetValue(plk(FPlace), X.Error)
     else
         FErrors.Remove(plk(FPlace));
     if prev_place_err <> FErrors.ContainsKey(plk(FPlace)) then
@@ -539,26 +517,19 @@ begin
 
 end;
 
-procedure TFormReadVars.SetRowChecked(row: Integer; v: Boolean);
-begin
-    FNetwork.FVars[row2var(row)].FUnchecked := v;
-    StringGrid_RedrawRow(StringGrid1, row);
-    ServerApp.GetResponse('SetsSvc.ToggleVar',
-      SO(Format('[%d]', [row2var(row)])));
-end;
-
 procedure TFormReadVars.ToggleRowChecked(row: Integer);
 begin
-    SetRowChecked(row, not FNetwork.FVars[row2var(row)].FUnchecked);
+    FNetwork.Vars[row2var(row)].Check := not FNetwork.Vars[row2var(row)].Check;
+    StringGrid_RedrawRow(StringGrid1, row);
+    TConfigSvc.ToggleVar(row2var(row));
 end;
 
 procedure TFormReadVars.ToggleColChecked(col: Integer);
 begin
-    FNetwork.FPlaces[col2place(col)].FUnchecked := not FNetwork.FPlaces
-      [col2place(col)].FUnchecked;
+    FNetwork.Places[col2place(col)].Check := not FNetwork.Places
+      [col2place(col)].Check;
     StringGrid_RedrawCol(StringGrid1, col);
-    ServerApp.GetResponse('SetsSvc.TogglePlace',
-      SO(Format('[%d]', [col2place(col)])));
+    TconfigSvc.TogglePlace(col2place(col));
 end;
 
 function TFormReadVars.FormatAddrPlace(place, varindex: Integer): string;
@@ -602,9 +573,9 @@ begin
 
 end;
 
-procedure TFormReadVars.UpdateNetwork(const method: string);
+procedure TFormReadVars.UpdateNetwork;
 begin
-    SetNetwork(ServerApp.MustGetResponseNetwork(method, SO('{}')));
+    SetNetwork(TConfigSvc.Network);
 end;
 
 end.

@@ -2,66 +2,63 @@
 
 interface
 
-uses Vcl.Graphics, Winapi.Windows, system.StrUtils;
+uses Vcl.Graphics;
 
 function str_validate_decimal_separator(s: string): string;
 function str_to_float(s: string): Double;
-function float_to_str(v: Double ): string;
 function str_replace_unicode_chars(s: string): string;
 function inttostr2(n: integer): string;
-function inttostr3(n: integer): string;
 function cut_str(s: string; c: TCanvas; w: integer): string;
-
-function StrFromCopydata(cd: PCOPYDATASTRUCT): string;
-
 function month_name(month_number: integer): string;
+function try_str_to_float(s: string; var v: Double): boolean;
 
-function MyBoolToStr(v: boolean): string;
-function MyStrToBool(v: string): boolean;
-function escape_slash(s:string):String;
-
+function BytesToHex(BA: TArray<byte>; Sep: string = ' ';
+  index_from: integer = -1; index_to: integer = -1): string;
 
 implementation
 
-uses System.SysUtils, System.DateUtils;
+uses SysUtils, dateutils;
 
-function float_to_str(v: Double ): string;
+function BytesToHex(BA: TArray<byte>; Sep: string; index_from: integer;
+  index_to: integer): string;
+var
+    i, k: integer;
 begin
-    result := StringReplace(FloatToStr(v), ',', '.', [rfReplaceAll]);
+    result := '';
+
+    if index_from = -1 then
+        index_from := low(BA);
+    if index_to = -1 then
+        index_to := high(BA);
+
+    if Sep = '' then
+    begin
+        for i := index_from to index_to do
+            result := result + IntToHex(BA[i], 2);
+    end
+    else
+    begin
+        k := index_to;
+        for i := index_from to k do
+        begin
+            result := result + IntToHex(BA[i], 2);
+            if k <> i then
+                result := result + Sep;
+        end;
+    end;
 end;
-
-
-function escape_slash(s:string):String;
-begin
-    result := StringReplace(S, '\', '\\', [rfReplaceAll]);
-end;
-
 
 function month_name(month_number: integer): string;
 begin
-    Result := FormatDateTime('mmmm', EncodeDateTime(2000, month_number, 1, 0,
+    result := FormatDateTime('mmmm', EncodeDateTime(2000, month_number, 1, 0,
       0, 0, 0));
-end;
-
-function StrFromCopydata(cd: PCOPYDATASTRUCT): string;
-begin
-    SetString(Result, PWideChar(cd.lpData), cd.cbData div 2);
 end;
 
 function inttostr2(n: integer): string;
 begin
-    Result := inttostr(n);
+    result := inttostr(n);
     if n < 10 then
-        Result := '0' + Result;
-end;
-
-function inttostr3(n: integer): string;
-begin
-    Result := inttostr(n);
-    if n < 10 then
-        Result := '00' + Result
-    else if n < 99 then
-        Result := '0' + Result;
+        result := '0' + result;
 end;
 
 function str_replace_unicode_chars(s: string): string;
@@ -72,6 +69,12 @@ begin
     s := StringReplace(s, '₈', '_8_', [rfReplaceAll]);
     s := StringReplace(s, '∑', '_sum_', [rfReplaceAll]);
     exit(s);
+
+end;
+
+function try_str_to_float(s: string; var v: Double): boolean;
+begin
+    result := TryStrToFloat(str_validate_decimal_separator(s), v);
 
 end;
 
@@ -97,33 +100,17 @@ var
 begin
     if w > c.TextWidth(s) then
         exit(s);
-    Result := s;
+    result := s;
     w1 := c.TextWidth('...');
-    Result := '';
+    result := '';
     for i := 1 to length(s) do
     begin
-        s1 := Result + s[i];
+        s1 := result + s[i];
         if c.TextWidth(s1) + w1 + 3 > w then
             break;
-        Result := s1;
+        result := s1;
     end;
-    Result := Result + '...';
-end;
-
-function MyBoolToStr(v: boolean): string;
-begin
-    if v then
-        exit('true');
-    exit('false');
-end;
-
-function MyStrToBool(v: string): boolean;
-begin
-    if LowerCase(v) = 'true' then
-        exit(true);
-    if LowerCase(v) = 'false' then
-        exit(false);
-    raise Exception.Create('not bool string: ' + v);
+    result := result + '...';
 end;
 
 end.

@@ -14,18 +14,28 @@ type
 
     TComponentBaloonhint = class helper for TWinControl
     public
-        function ShowBalloonTip(Icon: TIconKind; const Title, Text: string):THandle;
+        function ShowBalloonTip(Icon: TIconKind;
+          const Title, Text: string): THandle;
     end;
+
+function ShowBalloonTip(control: TWinControl; Icon: TIconKind;
+  const Title, Text: string): THandle;
 
 implementation
 
 uses
     Windows;
 
+function ShowBalloonTip(control: TWinControl; Icon: TIconKind;
+  const Title, Text: string): THandle;
+begin
+    result := control.ShowBalloonTip(Icon, Title, Text);
+end;
+
 { TComponentBaloonhint }
 
 function TComponentBaloonhint.ShowBalloonTip(Icon: TIconKind;
-  const Title, Text: string):THandle;
+  const Title, Text: string): THandle;
 var
     hWndTip: THandle;
     ToolInfo: TToolInfo;
