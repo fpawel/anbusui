@@ -37,24 +37,24 @@ type
     
     TChartsBucket = record
     public
-        BucketID : Int64;
-        Name : string;
-        Last : Boolean;
-        Day : Integer;
         Hour : Integer;
         Minute : Integer;
+        BucketID : Int64;
+        Name : string;
+        IsLast : Boolean;
+        Day : Integer;
         
     end;
     
     TTimeDelphi = record
     public
-        Year : Integer;
         Month : Integer;
         Day : Integer;
         Hour : Integer;
         Minute : Integer;
         Second : Integer;
         Millisecond : Integer;
+        Year : Integer;
         
     end;
     
@@ -67,10 +67,13 @@ type
     
     TReadVar = record
     public
-        Place : Integer;
-        VarIndex : Integer;
         Value : Double;
         Error : string;
+        Place : Integer;
+        VarIndex : Integer;
+        VarCode : Word;
+        Addr : Byte;
+        VarName : string;
         
     end;
     

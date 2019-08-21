@@ -33,6 +33,8 @@ begin
     for I := 0 to Length(AppVars)-1 do
         if AppVars[i].Name = name then
             exit(AppVars[i].Code);
+    if TryStrToInt(name, result) then
+        exit;
     exit(-1);
 end;
 

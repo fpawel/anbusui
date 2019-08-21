@@ -10,11 +10,10 @@ uses
 
 type
     TFormCharts = class(TForm)
-        Panel1: TPanel;
-        StringGrid1: TStringGrid;
-        Panel3: TPanel;
-        ComboBox1: TComboBox;
-        Splitter1: TSplitter;
+    Panel1: TPanel;
+    Panel3: TPanel;
+    ComboBox1: TComboBox;
+    StringGrid1: TStringGrid;
         procedure FormCreate(Sender: TObject);
         procedure ComboBox1Change(Sender: TObject);
         procedure StringGrid1DrawCell(Sender: TObject; ACol, ARow: Integer;
@@ -22,7 +21,7 @@ type
         procedure StringGrid1SelectCell(Sender: TObject; ACol, ARow: Integer;
           var CanSelect: Boolean);
         procedure FormShow(Sender: TObject);
-        procedure Panel1Resize(Sender: TObject);
+    procedure FormResize(Sender: TObject);
     private
         { Private declarations }
         FBuckets: TArray<TChartsBucket>;
@@ -52,20 +51,19 @@ begin
     //
 end;
 
-procedure TFormCharts.FormShow(Sender: TObject);
-begin
-    //
-end;
-
-procedure TFormCharts.Panel1Resize(Sender: TObject);
+procedure TFormCharts.FormResize(Sender: TObject);
 begin
     with StringGrid1 do
     begin
         ColWidths[0] := 70;
-        ColWidths[1] := 70;
-        ColWidths[2] := Panel1.Width - ColWidths[0] - ColWidths[1] - 10;
+        ColWidths[1] := Panel1.Width - ColWidths[0] - 10;
         Repaint;
     end;
+end;
+
+procedure TFormCharts.FormShow(Sender: TObject);
+begin
+    //
 end;
 
 procedure TFormCharts.StringGrid1DrawCell(Sender: TObject; ACol, ARow: Integer;
@@ -118,7 +116,7 @@ begin
 
     with StringGrid1 do
     begin
-        ColCount := 3;
+        ColCount := 2;
 
         OnSelectCell := nil;
         with FYearMonth[ComboBox1.ItemIndex] do
@@ -130,7 +128,6 @@ begin
         FixedRows := 1;
         Cells[0, 0] := 'День';
         Cells[1, 0] := 'Вермя';
-        Cells[2, 0] := 'Работа';
 
         for I := 0 to length(FBuckets) - 1 do
             with FBuckets[I] do
@@ -138,7 +135,6 @@ begin
                 Cells[0, I + 1] := IntToStr2(day);
                 Cells[1, I + 1] :=
                   Format('%s:%s', [IntToStr2(hour), IntToStr2(minute)]);
-                Cells[2, I + 1] := Name;
             end;
 
         OnSelectCell := StringGrid1SelectCell;
@@ -154,7 +150,7 @@ var
 begin
     for I := 0 to length(FBuckets) do
         with FBuckets[I] do
-            if (StringGrid1.Row = I + 1) AND Last then
+            if (StringGrid1.Row = I + 1) AND IsLast then
                 FormChartSeries.AddValue(Addr, var_id, value, time);
 end;
 

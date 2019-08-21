@@ -47,7 +47,9 @@ uses
   SuperObjectHelp in 'utils\SuperObjectHelp.pas',
   app in 'app.pas',
   UnitFormChartSeries in 'UnitFormChartSeries.pas' {FormChartSeries},
-  UnitFormCharts in 'UnitFormCharts.pas' {FormCharts};
+  UnitFormCharts in 'UnitFormCharts.pas' {FormCharts},
+  comport in 'utils\comport.pas',
+  hardware_errors in 'utils\hardware_errors.pas';
 
 {$R *.res}
 

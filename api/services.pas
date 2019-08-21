@@ -10,11 +10,13 @@ type
     public
         class function AddPlace:TConfigNetwork;static;
         class function AddVar:TConfigNetwork;static;
+        class function ComportName:string;static;
         class function DelPlace:TConfigNetwork;static;
         class function DelVar:TConfigNetwork;static;
         class function GetEditConfig:string;static;
         class function Network:TConfigNetwork;static;
         class procedure SetAddr(Place:Integer; Addr:Byte);static;
+        class procedure SetComportName(param1:string);static;
         class function SetEditConfig(param1:string):string;static;
         class procedure SetVar(VarIndex:Integer; VarCode:Word);static;
         class function ToggleNetwork:TConfigNetwork;static;
@@ -36,13 +38,6 @@ type
     public
         class procedure Send(Addr:Integer; Cmd:Byte; Bytes:string);static;
         class procedure Write32(Addr:Integer; Cmd:Word; Value:Double);static;
-         
-    end;
-
-    TPeerSvc = class
-    public
-        class procedure Close;static;
-        class procedure Init;static;
          
     end;
 
@@ -74,6 +69,18 @@ begin
     
 
     ThttpRpcClient.Call('ConfigSvc.AddVar', req, Result); 
+end;
+
+
+class function TConfigSvc.ComportName:string;
+var
+    req : ISuperobject;
+begin
+    req := SO;
+
+    
+
+    SuperObject_Get(ThttpRpcClient.GetResponse('ConfigSvc.ComportName', req), Result); 
 end;
 
 
@@ -136,6 +143,19 @@ begin
     
 
     ThttpRpcClient.GetResponse('ConfigSvc.SetAddr', req); 
+end;
+
+
+class procedure TConfigSvc.SetComportName(param1:string);
+var
+    req : ISuperobject;
+begin
+    req := SA([]);
+
+    req.AsArray.Add(param1); 
+    
+
+    ThttpRpcClient.GetResponse('ConfigSvc.SetComportName', req); 
 end;
 
 
@@ -288,30 +308,6 @@ begin
     
 
     ThttpRpcClient.GetResponse('TaskSvc.Write32', req); 
-end;
-
- 
-class procedure TPeerSvc.Close;
-var
-    req : ISuperobject;
-begin
-    req := SO;
-
-    
-
-    ThttpRpcClient.GetResponse('PeerSvc.Close', req); 
-end;
-
-
-class procedure TPeerSvc.Init;
-var
-    req : ISuperobject;
-begin
-    req := SO;
-
-    
-
-    ThttpRpcClient.GetResponse('PeerSvc.Init', req); 
 end;
 
  

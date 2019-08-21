@@ -17,8 +17,6 @@ type
     end;
 
     TFormChartSeries = class(TForm)
-        Panel14: TPanel;
-        Panel4: TPanel;
         Panel8: TPanel;
         Panel10: TPanel;
         Panel2: TPanel;
@@ -284,6 +282,7 @@ begin
     end;
     FSeries.Clear;
     ListBox1.Clear;
+    ListBox1.Height := 40;
     ListBox2.Clear;
     // Panel12.Caption := format('%s %s', [datetimetostr(now), FChartTitle]);
 end;
@@ -428,6 +427,7 @@ var
     n, i: integer;
 begin
     AddVarListBox(ListBox1, var_id);
+    ListBox1.Height := ListBox1.ItemHeight * ListBox1.Items.Count + 10;
     AddStrIntListBox(ListBox2, Addr);
 
     ser := SeriesOf(Addr, var_id);
@@ -540,6 +540,7 @@ begin
     if visible then
     begin
         AddVarListBox(ListBox1, var_id);
+        ListBox1.Height := ListBox1.ItemHeight * ListBox1.Items.Count + 10;
         AddStrIntListBox(ListBox2, Addr);
         ser.ParentChart := Chart1;
         ser.Active := true;

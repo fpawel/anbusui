@@ -49,6 +49,9 @@ type
         ToolButton1: TToolButton;
         ToolButton2: TToolButton;
         ToolButton7: TToolButton;
+        Panel3: TPanel;
+        ComboBoxComport: TComboBox;
+    ToolButton8: TToolButton;
         procedure FormCreate(Sender: TObject);
         procedure PageControlMainDrawTab(Control: TCustomTabControl;
           TabIndex: integer; const Rect: TRect; Active: boolean);
@@ -67,13 +70,14 @@ type
         procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
           WheelDelta: integer; MousePos: TPoint; var Handled: boolean);
         procedure ToolButton7Click(Sender: TObject);
+        procedure ComboBoxComportDropDown(Sender: TObject);
+        procedure ComboBoxComportChange(Sender: TObject);
+    procedure ToolButton8Click(Sender: TObject);
     private
         { Private declarations }
         FhWndTip: THandle;
 
         procedure AppException(Sender: TObject; E: Exception);
-
-        procedure SetStatusText(level: string; AText: string);
 
         procedure HandleCopydata(var Message: TMessage); message WM_COPYDATA;
         procedure WMWindowPosChanged(var AMessage: TMessage);
@@ -86,17 +90,12 @@ type
         { Public declarations }
         procedure NewBallonTip(c: TWinControl; Icon: TIconKind;
           const Title, Text: string);
+        procedure SetStatusText(ok: boolean; AText: string);
 
     end;
 
 var
     AnbusMainForm: TAnbusMainForm;
-
-const
-    n_console = 'console';
-    n_status = 'status';
-    n_info = 'info';
-    n_err = 'error';
 
 implementation
 
@@ -109,7 +108,7 @@ uses vclutils,
     UnitFormChartSeries, System.StrUtils, System.Types, VclTee.Chart,
     UnitFormPopup, notify_services, UnitFormCharts, app, services,
     HttpRpcClient,
-    HttpExceptions;
+    HttpExceptions, comport;
 
 procedure TAnbusMainForm.FormCreate(Sender: TObject);
 begin
@@ -155,20 +154,54 @@ begin
         BorderStyle := bsNone;
         Visible := true;
         Font.Assign(self.Font);
-        Panel2.Hide;
+        Panel2.Parent := FormCharts;
+        Panel2.Align := alRight;
+        Panel2.Font.Assign(self.font);
         NewChart;
     end;
 
-    with FormCharts do
-    begin
-        Parent := TabSheetCharts;
-        Align := alClient;
-        BorderStyle := bsNone;
-        Visible := true;
-        Font.Assign(self.Font);
-    end;
+//    with FormCharts do
+//    begin
+//        Parent := PanelNetwork;
+//        Align := alBottom;
+//        Height := 200;
+//        BorderStyle := bsNone;
+//        Visible := true;
+//        Font.Assign(self.Font);
+//    end;
     FormReadVars.UpdateNetwork;
+
+    SetOnWorkError(
+        procedure(s: string)
+        begin
+            SetStatusText(false, s);
+        end);
+
+    SetOnReadVar(FormReadVars.HandleReadVar);
+
+    SetOnNewSeries(FormCharts.FetchYearsMonths);
+
+    EnumComports(ComboBoxComport.Items);
+    ComboBoxComport.ItemIndex := ComboBoxComport.Items.IndexOf
+      (TConfigSvc.ComportName);
+    FormCharts.FetchYearsMonths;
+
     NotifyServices_SetEnabled(true);
+
+end;
+
+procedure TAnbusMainForm.ComboBoxComportChange(Sender: TObject);
+begin
+    TConfigSvc.SetComportName(ComboBoxComport.Text);
+end;
+
+procedure TAnbusMainForm.ComboBoxComportDropDown(Sender: TObject);
+var
+    s: string;
+begin
+    s := ComboBoxComport.Text;
+    EnumComports(ComboBoxComport.Items);
+    ComboBoxComport.ItemIndex := ComboBoxComport.Items.IndexOf(s);
 end;
 
 procedure TAnbusMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -178,12 +211,7 @@ var
 begin
     NotifyServices_SetEnabled(false);
     HttpRpcClient.TIMEOUT_CONNECT := 10;
-    try
-        TPeerSvc.Close;
-    except
-        on ERpcNoResponseException do
-            exit;
-    end;
+    // notify_services.CloseServerWindow;
 
     fs := TFileStream.Create(ChangeFileExt(paramstr(0), '.position'),
       fmOpenWrite or fmCreate);
@@ -195,14 +223,14 @@ begin
 end;
 
 procedure TAnbusMainForm.FormMouseWheel(Sender: TObject; Shift: TShiftState;
-  WheelDelta: integer; MousePos: TPoint; var Handled: boolean);
+WheelDelta: integer; MousePos: TPoint; var Handled: boolean);
 begin
     FormChartSeries.ChangeAxisOrder(GetVCLControlAtPos(self, MousePos),
       WheelDelta);
 end;
 
 procedure TAnbusMainForm.NewBallonTip(c: TWinControl; Icon: TIconKind;
-  const Title, Text: string);
+const Title, Text: string);
 begin
     CloseWindow(FhWndTip);
     FhWndTip := c.ShowBalloonTip(Icon, Title, Text);
@@ -222,7 +250,7 @@ begin
 end;
 
 procedure TAnbusMainForm.PageControlMainDrawTab(Control: TCustomTabControl;
-  TabIndex: integer; const Rect: TRect; Active: boolean);
+TabIndex: integer; const Rect: TRect; Active: boolean);
 begin
     PageControl_DrawVerticalTab(Control, TabIndex, Rect, Active);
 end;
@@ -256,7 +284,7 @@ begin
 end;
 
 procedure TAnbusMainForm.ToolButton4MouseMove(Sender: TObject;
-  Shift: TShiftState; X, Y: integer);
+Shift: TShiftState; X, Y: integer);
 begin
     with FormReadVars.StringGrid1 do
     begin
@@ -277,7 +305,7 @@ begin
 end;
 
 procedure TAnbusMainForm.ToolButton6MouseMove(Sender: TObject;
-  Shift: TShiftState; X, Y: integer);
+Shift: TShiftState; X, Y: integer);
 begin
     with FormReadVars.StringGrid1 do
     begin
@@ -304,6 +332,20 @@ begin
     end;
 end;
 
+procedure TAnbusMainForm.ToolButton8Click(Sender: TObject);
+begin
+    with ToolButton8 do
+        with ClientToScreen(Point(0, Height)) do
+        begin
+            with FormCharts do
+            begin
+                Left := x - 5 - Width;
+                Top := Y + 5;
+                Show;
+            end;
+        end;
+end;
+
 procedure TAnbusMainForm.ToolButtonConsoleHideClick(Sender: TObject);
 begin
     if PanelInput.Height > 32 then
@@ -322,14 +364,12 @@ begin
 
 end;
 
-procedure TAnbusMainForm.SetStatusText(level: string; AText: string);
+procedure TAnbusMainForm.SetStatusText(ok: boolean; AText: string);
 begin
-    if level = n_info then
+    if ok then
         PanelStatus.Font.Color := clBlack
-    else if level = n_err then
-        PanelStatus.Font.Color := clRed
     else
-        PanelStatus.Font.Color := clBlack;
+        PanelStatus.Font.Color := clRed;
     PanelStatus.Caption := '    ' + AText;
 end;
 
@@ -382,12 +422,7 @@ begin
     begin
         NotifyServices_SetEnabled(false);
         HttpRpcClient.TIMEOUT_CONNECT := 10;
-        try
-            TPeerSvc.Close;
-        except
-            on ERpcNoResponseException do
-                exit;
-        end;
+        notify_services.CloseServerWindow;
 
         Application.OnException := nil;
         Application.Terminate;

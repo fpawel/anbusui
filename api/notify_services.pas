@@ -6,12 +6,13 @@ interface
 uses superobject, Winapi.Windows, Winapi.Messages, server_data_types;
 
 type
-    TProcedure = reference to procedure;
     TStringHandler = reference to procedure (x:string);
     TReadVarHandler = reference to procedure (x:TReadVar);
+    TProcedure = reference to procedure;
     
 
 procedure HandleCopydata(var Message: TMessage);
+procedure CloseServerWindow;
 
 procedure SetOnWriteConsoleInfo( AHandler : TStringHandler);
 procedure SetOnWriteConsoleError( AHandler : TStringHandler);
@@ -42,6 +43,11 @@ var
     _OnReadVar : TReadVarHandler;
     _OnNewSeries : TProcedure;
     _enabled:boolean;
+
+procedure CloseServerWindow;
+begin
+    SendMessage(FindWindow('AnbusServerWindow', nil), WM_CLOSE, 0, 0)
+end;
 
 class function _deserializer.deserialize<T>(str:string):T;
 begin

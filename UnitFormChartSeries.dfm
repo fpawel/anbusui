@@ -14,24 +14,6 @@ object FormChartSeries: TFormChartSeries
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 18
-  object Panel14: TPanel
-    Left = 0
-    Top = 0
-    Width = 5
-    Height = 670
-    Align = alLeft
-    BevelOuter = bvNone
-    TabOrder = 0
-  end
-  object Panel4: TPanel
-    Left = 995
-    Top = 0
-    Width = 5
-    Height = 670
-    Align = alRight
-    BevelOuter = bvNone
-    TabOrder = 1
-  end
   object Panel8: TPanel
     Left = 0
     Top = 670
@@ -39,25 +21,27 @@ object FormChartSeries: TFormChartSeries
     Height = 5
     Align = alBottom
     BevelOuter = bvNone
-    TabOrder = 2
+    TabOrder = 0
   end
   object Panel10: TPanel
-    Left = 5
+    Left = 0
     Top = 0
     Width = 5
     Height = 670
     Align = alLeft
     BevelOuter = bvNone
-    TabOrder = 3
+    TabOrder = 1
+    ExplicitLeft = 5
   end
   object Panel2: TPanel
-    Left = 10
+    Left = 5
     Top = 0
     Width = 119
     Height = 670
     Align = alLeft
     BevelOuter = bvNone
-    TabOrder = 4
+    TabOrder = 2
+    ExplicitLeft = 10
     object Splitter1: TSplitter
       Left = 0
       Top = 305
@@ -147,17 +131,19 @@ object FormChartSeries: TFormChartSeries
     end
   end
   object Panel3: TPanel
-    Left = 129
+    Left = 124
     Top = 0
-    Width = 866
+    Width = 876
     Height = 670
     Align = alClient
     BevelOuter = bvNone
-    TabOrder = 5
+    TabOrder = 3
+    ExplicitLeft = 129
+    ExplicitWidth = 866
     object Chart1: TChart
       Left = 0
       Top = 32
-      Width = 866
+      Width = 876
       Height = 638
       Legend.Alignment = laBottom
       Legend.CheckBoxes = True
@@ -194,13 +180,14 @@ object FormChartSeries: TFormChartSeries
       BevelOuter = bvNone
       Color = clWindow
       TabOrder = 0
+      ExplicitWidth = 866
       DefaultCanvas = 'TGDIPlusCanvas'
       ColorPaletteIndex = 13
     end
     object Panel5: TPanel
       Left = 0
       Top = 0
-      Width = 866
+      Width = 876
       Height = 32
       Align = alTop
       Alignment = taLeftJustify
@@ -214,8 +201,9 @@ object FormChartSeries: TFormChartSeries
       ParentBackground = False
       ParentFont = False
       TabOrder = 1
+      ExplicitWidth = 866
       object ToolBar1: TToolBar
-        Left = 800
+        Left = 810
         Top = 0
         Width = 66
         Align = alRight
@@ -226,6 +214,7 @@ object FormChartSeries: TFormChartSeries
         EdgeOuter = esNone
         Images = ImageList1
         TabOrder = 0
+        ExplicitLeft = 800
         object ToolButton1: TToolButton
           Left = 0
           Top = 0
@@ -252,25 +241,27 @@ object FormChartSeries: TFormChartSeries
       object Panel11: TPanel
         Left = 0
         Top = 0
-        Width = 768
+        Width = 778
         Height = 32
         Align = alClient
         BevelOuter = bvNone
         ParentColor = True
         TabOrder = 1
+        ExplicitWidth = 768
         object Panel12: TPanel
           Left = 0
           Top = 0
-          Width = 768
+          Width = 778
           Height = 10
           Align = alTop
           BevelOuter = bvNone
           TabOrder = 0
+          ExplicitWidth = 768
         end
         object GridPanel1: TGridPanel
           Left = 0
           Top = 10
-          Width = 768
+          Width = 778
           Height = 22
           Align = alClient
           BevelOuter = bvNone
@@ -297,10 +288,11 @@ object FormChartSeries: TFormChartSeries
               Value = 100.000000000000000000
             end>
           TabOrder = 1
+          ExplicitWidth = 768
           object Memo1: TMemo
             Left = 0
             Top = 0
-            Width = 384
+            Width = 389
             Height = 22
             Align = alClient
             Alignment = taCenter
@@ -318,11 +310,12 @@ object FormChartSeries: TFormChartSeries
             TabOrder = 0
             WordWrap = False
             OnMouseMove = Memo2MouseMove
+            ExplicitWidth = 384
           end
           object Memo2: TMemo
-            Left = 384
+            Left = 389
             Top = 0
-            Width = 384
+            Width = 389
             Height = 22
             Align = alClient
             Alignment = taCenter
@@ -340,11 +333,13 @@ object FormChartSeries: TFormChartSeries
             TabOrder = 1
             WordWrap = False
             OnMouseMove = Memo2MouseMove
+            ExplicitLeft = 384
+            ExplicitWidth = 384
           end
         end
       end
       object ToolBar2: TToolBar
-        Left = 768
+        Left = 778
         Top = 0
         Width = 32
         Align = alRight
@@ -355,6 +350,7 @@ object FormChartSeries: TFormChartSeries
         EdgeOuter = esNone
         Images = ImageList1
         TabOrder = 2
+        ExplicitLeft = 768
         object ToolButton6: TToolButton
           Left = 0
           Top = 0

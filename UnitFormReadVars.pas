@@ -48,6 +48,7 @@ type
     public
         { Public declarations }
 
+
         function FormatAddrPlace(place, varindex: Integer): string;
 
         procedure SetNetwork(ANetwork: TConfigNetwork);
@@ -65,7 +66,8 @@ implementation
 {$R *.dfm}
 
 uses stringgridutils, rest.json, stringutils, UnitFormPopup,
-    UnitFormChartSeries, ujsonrpc, superobject, services;
+    UnitFormChartSeries, ujsonrpc, superobject, services, UnitAnbusMainForm,
+  UnitFormCharts;
 
 function TStringGridEx.GetInplaceEditor: TInplaceEdit;
 begin
@@ -157,7 +159,9 @@ begin
         with FormPopup do
         begin
             RichEdit1.Font.Color := clRed;
-            RichEdit1.Text := FErrors[k];
+            RichEdit1.Text := stringreplace(FErrors[k], ': ',
+      #13#10#9' - ', [rfReplaceAll, rfIgnoreCase]);
+
             Left := pt.X + 5;
             Top := pt.Y + 5;
             Show;
@@ -477,6 +481,7 @@ procedure TFormReadVars.HandleReadVar(X: TReadVar);
 var
     prev_place, prev_var: Integer;
     prev_place_err: Boolean;
+    what:string;
 begin
     if not FInitialized then
         exit;
@@ -484,18 +489,21 @@ begin
     prev_var := FVarIndex;
     FPlace := X.Place;
     FVarIndex := X.VarIndex;
+    what := Format('$%s.%s', [ inttohex(x.Addr),X.VarName ]);
     if X.Error <> '' then
     begin
         FErrors.AddOrSetValue(pvk(FPlace, FVarIndex), X.Error);
         StringGrid1.Cells[place2col(FPlace), var2row(FVarIndex)] := X.Error;
+        AnbusMainForm.SetStatusText(false, x.Error + ': '+what);
     end
     else
     begin
         FErrors.Remove(pvk(FPlace, FVarIndex));
         StringGrid1.Cells[place2col(FPlace), var2row(FVarIndex)] :=
           floattostr(X.Value);
-        FormChartSeries.AddValue(AddrByIndex(X.Place), VarByIndex(X.VarIndex),
+        FormCharts.AddValue(AddrByIndex(X.Place), VarByIndex(X.VarIndex),
           X.Value, now);
+        AnbusMainForm.SetStatusText(true, what + '='+floattostr(x.Value));
     end;
 
     if (prev_place >= 0) and (prev_var >= 0) then
