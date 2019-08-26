@@ -10,10 +10,10 @@ uses
 
 type
     TFormCharts = class(TForm)
-    Panel1: TPanel;
-    Panel3: TPanel;
-    ComboBox1: TComboBox;
-    StringGrid1: TStringGrid;
+        Panel1: TPanel;
+        Panel3: TPanel;
+        ComboBox1: TComboBox;
+        StringGrid1: TStringGrid;
         procedure FormCreate(Sender: TObject);
         procedure ComboBox1Change(Sender: TObject);
         procedure StringGrid1DrawCell(Sender: TObject; ACol, ARow: Integer;
@@ -21,7 +21,7 @@ type
         procedure StringGrid1SelectCell(Sender: TObject; ACol, ARow: Integer;
           var CanSelect: Boolean);
         procedure FormShow(Sender: TObject);
-    procedure FormResize(Sender: TObject);
+        procedure FormResize(Sender: TObject);
     private
         { Private declarations }
         FBuckets: TArray<TChartsBucket>;
@@ -101,12 +101,33 @@ end;
 
 procedure TFormCharts.StringGrid1SelectCell(Sender: TObject;
   ACol, ARow: Integer; var CanSelect: Boolean);
+var
+    s: string;
 begin
     if ARow - 1 >= length(FBuckets) then
         exit;
     FormChartSeries.Hide;
-    Mil82HttpGetResponseAsync(Format(GetAppHttpAddr + '/chart?bucket=%d',
-      [FBuckets[ARow - 1].BucketID]), OnResponse);
+    with FBuckets[ARow - 1], FYearMonth[ComboBox1.ItemIndex] do
+    begin
+        if IsLast = true then
+        begin
+            s := ', текущий';
+            FormChartSeries.MemoTitle.Font.Color := clBlue;
+        end
+        else
+        begin
+            s := '';
+            FormChartSeries.MemoTitle.Font.Color := clNavy;
+        end;
+        FormChartSeries.MemoTitle.Text := format('График №%d, %d.%s.%s %s:%s%s',
+          [BucketID, Year, inttostr2(Month), inttostr2(Day), inttostr2(Hour),
+          inttostr2(Minute), s]);
+
+        AnbusHttpGetResponseAsync(format(GetAppHttpAddr + '/chart?bucket=%d',
+          [BucketID]), OnResponse);
+
+    end;
+
 end;
 
 procedure TFormCharts.ComboBox1Change(Sender: TObject);
@@ -120,21 +141,21 @@ begin
 
         OnSelectCell := nil;
         with FYearMonth[ComboBox1.ItemIndex] do
-            FBuckets := TChartsSvc.BucketsOfYearMonth(year, month);
+            FBuckets := TChartsSvc.BucketsOfYearMonth(Year, Month);
         RowCount := length(FBuckets) + 1;
         if RowCount = 1 then
             exit;
 
         FixedRows := 1;
         Cells[0, 0] := 'День';
-        Cells[1, 0] := 'Вермя';
+        Cells[1, 0] := 'Время';
 
         for I := 0 to length(FBuckets) - 1 do
             with FBuckets[I] do
             begin
-                Cells[0, I + 1] := IntToStr2(day);
+                Cells[0, I + 1] := inttostr2(Day);
                 Cells[1, I + 1] :=
-                  Format('%s:%s', [IntToStr2(hour), IntToStr2(minute)]);
+                  format('%s:%s', [inttostr2(Hour), inttostr2(Minute)]);
             end;
 
         OnSelectCell := StringGrid1SelectCell;
@@ -150,8 +171,11 @@ var
 begin
     for I := 0 to length(FBuckets) do
         with FBuckets[I] do
-            if (StringGrid1.Row = I + 1) AND IsLast then
-                FormChartSeries.AddValue(Addr, var_id, value, time);
+            with StringGrid1 do
+                if (Row = I + 1) AND IsLast then
+                begin
+                    FormChartSeries.AddValue(Addr, var_id, value, time);
+                end;
 end;
 
 procedure TFormCharts.FetchYearsMonths;
@@ -164,15 +188,15 @@ begin
     if length(FYearMonth) = 0 then
         with ym do
         begin
-            year := YearOf(now);
-            month := MonthOf(now);
+            Year := YearOf(now);
+            Month := MonthOf(now);
             FYearMonth := [ym];
         end;
 
     for I := 0 to length(FYearMonth) - 1 do
         with FYearMonth[I] do
-            ComboBox1.Items.Add(Format('%d %s',
-              [year, FormatDateTime('MMMM', IncMonth(0, month))]));
+            ComboBox1.Items.Add(format('%d %s',
+              [Year, FormatDateTime('MMMM', IncMonth(0, Month))]));
 
     ComboBox1.ItemIndex := 0;
     ComboBox1Change(nil);
@@ -181,9 +205,9 @@ end;
 procedure TFormCharts.OnResponse(AResponse: TBytes);
 var
     stored_at: TDateTime;
-    address, month, day, hour, minute, second: byte;
+    address, Month, Day, Hour, Minute, second: byte;
 
-    variable, year, millisecond: word;
+    variable, Year, millisecond: word;
     value: double;
     ms: TMemoryStream;
     BR: TBinaryReader;
@@ -203,15 +227,15 @@ begin
     begin
         address := BR.ReadByte;
         variable := BR.ReadWord;
-        year := BR.ReadWord;
-        month := BR.ReadByte;
-        day := BR.ReadByte;
-        hour := BR.ReadByte;
-        minute := BR.ReadByte;
+        Year := BR.ReadWord;
+        Month := BR.ReadByte;
+        Day := BR.ReadByte;
+        Hour := BR.ReadByte;
+        Minute := BR.ReadByte;
         second := BR.ReadByte;
         millisecond := BR.ReadWord;
 
-        stored_at := EncodeDateTime(year, month, day, hour, minute, second,
+        stored_at := EncodeDateTime(Year, Month, Day, Hour, Minute, second,
           millisecond);
 
         value := BR.ReadDouble;

@@ -33,13 +33,12 @@ type
         ListBox2: TListBox;
         Panel7: TPanel;
         Panel11: TPanel;
-        Panel12: TPanel;
         ToolButton1: TToolButton;
-        GridPanel1: TGridPanel;
-        Memo1: TMemo;
-        Memo2: TMemo;
         ToolBar2: TToolBar;
         ToolButton6: TToolButton;
+    Memo1: TMemo;
+    Memo2: TMemo;
+    MemoTitle: TMemo;
         procedure FormCreate(Sender: TObject);
         procedure ListBox1Click(Sender: TObject);
         procedure Chart1AfterDraw(Sender: TObject);
@@ -50,6 +49,7 @@ type
         procedure Chart1UndoZoom(Sender: TObject);
         procedure Memo2MouseMove(Sender: TObject; Shift: TShiftState;
           X, Y: integer);
+    procedure ToolButton6Click(Sender: TObject);
     private
         { Private declarations }
         FSeries: TDictionary<ProductVar, TFastLineSeries>;
@@ -91,7 +91,7 @@ implementation
 {$R *.dfm}
 
 uses stringutils, dateutils, StrUtils, math, System.Types, vclutils,
-    ComponentBaloonHintU, app;
+    ComponentBaloonHintU, app, server_data_types, services, dateUtils;
 
 function pow2(X: Extended): Extended;
 begin
@@ -128,8 +128,6 @@ begin
     exit(-1);
 end;
 
-
-
 function CompareStrInt(List: TStringList; Index1, Index2: integer): integer;
 var
     d1, d2: integer;
@@ -156,7 +154,6 @@ begin
     sl.Free;
 end;
 
-
 procedure AddVarListBox(AListbox: TListBox; nvar: integer);
 var
     n: integer;
@@ -166,7 +163,7 @@ begin
         exit;
     n := AListbox.Items.Add(AppVarName(nvar));
     AListbox.Selected[n] := true;
-    if Assigned( AListbox.OnClick ) then
+    if Assigned(AListbox.OnClick) then
         AListbox.OnClick(AListbox);
 
 end;
@@ -180,7 +177,7 @@ begin
         exit;
     n := AListbox.Items.Add(inttostr(new_item));
     AListbox.Selected[n] := true;
-    if Assigned( AListbox.OnClick ) then
+    if Assigned(AListbox.OnClick) then
         AListbox.OnClick(AListbox);
 
 end;
@@ -467,6 +464,30 @@ begin
     Chart1.Repaint;
 end;
 
+function TimeDelphi(t:TDateTime):TTimeDelphi;
+var AYear, AMonth, ADay,
+  AHour, AMinute, ASecond, AMilliSecond: Word;
+begin
+    DecodeDateTime(t, AYear, AMonth, ADay,
+  AHour, AMinute, ASecond, AMilliSecond);
+  with Result do
+  begin
+      Year := AYear;
+      Month := AMonth;
+      Day := ADay;
+      Hour := AHour;
+      Minute := AMinute;
+      Second := ASecond;
+      MilliSecond := AMilliSecond;
+  end;
+end;
+
+procedure TFormChartSeries.ToolButton6Click(Sender: TObject);
+begin
+    //TChartsSvc.DeletePoints(FBucketID)
+
+end;
+
 function TFormChartSeries.GetActiveSeries: TFastLineSeries;
 var
     i: TPair<ProductVar, TFastLineSeries>;
@@ -492,11 +513,10 @@ begin
         s2 := TimetoStr(Maximum);
         s3 := TimetoStr(v);
 
-
         if v = 0 then
             s := 'нет значений'
         else if v < IncSecond(0, 1) then
-            s := inttostr(MilliSecondsBetween(Maximum, Minimum )) + 'мс'
+            s := inttostr(MilliSecondsBetween(Maximum, Minimum)) + 'мс'
         else if v < IncMinute(0, 1) then
             s := inttostr(SecondsBetween(Maximum, Minimum)) + ' c'
         else if v < Inchour(0, 1) then
@@ -599,6 +619,5 @@ begin
       ('{"Year":%d,  "Month":%d, "Day":%d, "Hour":%d, "Minute":%d, "Second":%d, "Millisecond":%d}',
       [Y, mo, d, h, mn, s, ml]);
 end;
-
 
 end.

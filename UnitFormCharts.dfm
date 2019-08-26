@@ -27,9 +27,6 @@ object FormCharts: TFormCharts
     Caption = 'Panel1'
     ShowCaption = False
     TabOrder = 0
-    ExplicitLeft = 443
-    ExplicitTop = 3
-    ExplicitWidth = 306
     object Panel3: TPanel
       Left = 0
       Top = 0
@@ -48,7 +45,6 @@ object FormCharts: TFormCharts
       ParentBackground = False
       ParentFont = False
       TabOrder = 0
-      ExplicitWidth = 265
       object ComboBox1: TComboBox
         Left = 77
         Top = 2
@@ -91,8 +87,7 @@ object FormCharts: TFormCharts
       TabOrder = 1
       OnDrawCell = StringGrid1DrawCell
       OnSelectCell = StringGrid1SelectCell
-      ExplicitLeft = 0
-      ExplicitWidth = 434
+      ExplicitLeft = 6
       ColWidths = (
         64
         64)

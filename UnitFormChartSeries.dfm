@@ -31,7 +31,6 @@ object FormChartSeries: TFormChartSeries
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitLeft = 5
   end
   object Panel2: TPanel
     Left = 5
@@ -41,7 +40,6 @@ object FormChartSeries: TFormChartSeries
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitLeft = 10
     object Splitter1: TSplitter
       Left = 0
       Top = 305
@@ -138,8 +136,6 @@ object FormChartSeries: TFormChartSeries
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 3
-    ExplicitLeft = 129
-    ExplicitWidth = 866
     object Chart1: TChart
       Left = 0
       Top = 32
@@ -168,7 +164,6 @@ object FormChartSeries: TFormChartSeries
       Title.Font.Name = 'Consolas'
       Title.Text.Strings = (
         'TChart')
-      Title.Visible = False
       Title.VertMargin = 0
       OnClickLegend = Chart1ClickLegend
       OnUndoZoom = Chart1UndoZoom
@@ -180,7 +175,7 @@ object FormChartSeries: TFormChartSeries
       BevelOuter = bvNone
       Color = clWindow
       TabOrder = 0
-      ExplicitWidth = 866
+      ExplicitTop = 26
       DefaultCanvas = 'TGDIPlusCanvas'
       ColorPaletteIndex = 13
     end
@@ -201,7 +196,6 @@ object FormChartSeries: TFormChartSeries
       ParentBackground = False
       ParentFont = False
       TabOrder = 1
-      ExplicitWidth = 866
       object ToolBar1: TToolBar
         Left = 810
         Top = 0
@@ -214,7 +208,6 @@ object FormChartSeries: TFormChartSeries
         EdgeOuter = esNone
         Images = ImageList1
         TabOrder = 0
-        ExplicitLeft = 800
         object ToolButton1: TToolButton
           Left = 0
           Top = 0
@@ -247,95 +240,89 @@ object FormChartSeries: TFormChartSeries
         BevelOuter = bvNone
         ParentColor = True
         TabOrder = 1
-        ExplicitWidth = 768
-        object Panel12: TPanel
-          Left = 0
-          Top = 0
-          Width = 778
-          Height = 10
-          Align = alTop
-          BevelOuter = bvNone
+        ExplicitLeft = -6
+        ExplicitTop = -6
+        object Memo1: TMemo
+          AlignWithMargins = True
+          Left = 575
+          Top = 5
+          Width = 200
+          Height = 24
+          Margins.Top = 5
+          Align = alRight
+          Alignment = taCenter
+          BorderStyle = bsNone
+          Color = clGradientInactiveCaption
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clBlack
+          Font.Height = -12
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          Lines.Strings = (
+            'Memo1')
+          ParentFont = False
+          ReadOnly = True
           TabOrder = 0
-          ExplicitWidth = 768
+          WordWrap = False
+          OnMouseMove = Memo2MouseMove
+          ExplicitLeft = 560
+          ExplicitTop = 0
+          ExplicitHeight = 32
         end
-        object GridPanel1: TGridPanel
-          Left = 0
-          Top = 10
-          Width = 778
-          Height = 22
-          Align = alClient
-          BevelOuter = bvNone
-          ColumnCollection = <
-            item
-              Value = 50.000000000000000000
-            end
-            item
-              Value = 50.000000000000000000
-            end>
-          ControlCollection = <
-            item
-              Column = 0
-              Control = Memo1
-              Row = 0
-            end
-            item
-              Column = 1
-              Control = Memo2
-              Row = 0
-            end>
-          RowCollection = <
-            item
-              Value = 100.000000000000000000
-            end>
+        object Memo2: TMemo
+          AlignWithMargins = True
+          Left = 369
+          Top = 5
+          Width = 200
+          Height = 24
+          Margins.Top = 5
+          Align = alRight
+          Alignment = taCenter
+          BorderStyle = bsNone
+          Color = clGradientInactiveCaption
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clBlack
+          Font.Height = -12
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          Lines.Strings = (
+            'Memo1')
+          ParentFont = False
+          ReadOnly = True
           TabOrder = 1
-          ExplicitWidth = 768
-          object Memo1: TMemo
-            Left = 0
-            Top = 0
-            Width = 389
-            Height = 22
-            Align = alClient
-            Alignment = taCenter
-            BorderStyle = bsNone
-            Color = clGradientInactiveCaption
-            Font.Charset = DEFAULT_CHARSET
-            Font.Color = clBlack
-            Font.Height = -15
-            Font.Name = 'Tahoma'
-            Font.Style = []
-            Lines.Strings = (
-              'Memo1')
-            ParentFont = False
-            ReadOnly = True
-            TabOrder = 0
-            WordWrap = False
-            OnMouseMove = Memo2MouseMove
-            ExplicitWidth = 384
-          end
-          object Memo2: TMemo
-            Left = 389
-            Top = 0
-            Width = 389
-            Height = 22
-            Align = alClient
-            Alignment = taCenter
-            BorderStyle = bsNone
-            Color = clGradientInactiveCaption
-            Font.Charset = DEFAULT_CHARSET
-            Font.Color = clBlack
-            Font.Height = -15
-            Font.Name = 'Tahoma'
-            Font.Style = []
-            Lines.Strings = (
-              'Memo1')
-            ParentFont = False
-            ReadOnly = True
-            TabOrder = 1
-            WordWrap = False
-            OnMouseMove = Memo2MouseMove
-            ExplicitLeft = 384
-            ExplicitWidth = 384
-          end
+          WordWrap = False
+          OnMouseMove = Memo2MouseMove
+          ExplicitLeft = 402
+          ExplicitTop = 0
+          ExplicitHeight = 32
+        end
+        object MemoTitle: TMemo
+          AlignWithMargins = True
+          Left = 3
+          Top = 5
+          Width = 360
+          Height = 24
+          Margins.Top = 5
+          Align = alClient
+          Alignment = taCenter
+          BorderStyle = bsNone
+          Color = clGradientInactiveCaption
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clBlack
+          Font.Height = -15
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          Lines.Strings = (
+            'Memo1')
+          ParentFont = False
+          ReadOnly = True
+          TabOrder = 2
+          WordWrap = False
+          OnMouseMove = Memo2MouseMove
+          ExplicitLeft = 402
+          ExplicitTop = 0
+          ExplicitWidth = 200
+          ExplicitHeight = 32
         end
       end
       object ToolBar2: TToolBar
@@ -350,7 +337,6 @@ object FormChartSeries: TFormChartSeries
         EdgeOuter = esNone
         Images = ImageList1
         TabOrder = 2
-        ExplicitLeft = 768
         object ToolButton6: TToolButton
           Left = 0
           Top = 0
@@ -359,6 +345,7 @@ object FormChartSeries: TFormChartSeries
           ImageIndex = 1
           ParentShowHint = False
           ShowHint = True
+          OnClick = ToolButton6Click
         end
       end
     end

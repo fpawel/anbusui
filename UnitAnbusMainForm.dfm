@@ -3181,8 +3181,6 @@ object AnbusMainForm: TAnbusMainForm
         Align = alLeft
         BevelOuter = bvNone
         TabOrder = 0
-        ExplicitLeft = 3
-        ExplicitTop = -2
         object Panel1: TPanel
           Left = 0
           Top = 0
@@ -3201,8 +3199,6 @@ object AnbusMainForm: TAnbusMainForm
           ParentBackground = False
           ParentFont = False
           TabOrder = 0
-          ExplicitLeft = -6
-          ExplicitTop = 2
           object ToolBar1: TToolBar
             Left = 344
             Top = 0
@@ -3290,7 +3286,6 @@ object AnbusMainForm: TAnbusMainForm
             Font.Style = []
             ParentFont = False
             TabOrder = 1
-            ExplicitLeft = 304
           end
           object ComboBoxComport: TComboBox
             AlignWithMargins = True
@@ -3310,8 +3305,6 @@ object AnbusMainForm: TAnbusMainForm
             TabOrder = 2
             OnChange = ComboBoxComportChange
             OnDropDown = ComboBoxComportDropDown
-            ExplicitLeft = 296
-            ExplicitTop = 5
           end
         end
       end

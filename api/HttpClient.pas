@@ -12,7 +12,7 @@ const
 type
     TUpdateGUIProcedure = reference to procedure(bytes: TBytes);
 
-procedure Mil82HttpGetResponseAsync(AUrl: string;
+procedure AnbusHttpGetResponseAsync(AUrl: string;
   UpdateGUIProcedure: TUpdateGUIProcedure);
 
 implementation
@@ -33,7 +33,7 @@ type
         destructor Destroy; override;
     end;
 
-procedure Mil82HttpGetResponseAsync(AUrl: string;
+procedure AnbusHttpGetResponseAsync(AUrl: string;
   UpdateGUIProcedure: TUpdateGUIProcedure);
 begin
     with TReqThread.Create(true) do
